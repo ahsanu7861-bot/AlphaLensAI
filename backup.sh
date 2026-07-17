@@ -1,8 +1,12 @@
+cat > /Users/apple/AlphaLensAI/backup.sh <<'EOF'
 #!/bin/bash
 
 set -Eeuo pipefail
 
 PROJECT_DIR="/Users/apple/AlphaLensAI"
+PROJECT_PARENT="/Users/apple"
+PROJECT_NAME="AlphaLensAI"
+
 BACKUP_ROOT="/Users/apple/Documents/AlphaLensAI Backups"
 DAILY_DIR="$BACKUP_ROOT/Daily"
 LOG_FILE="$HOME/Library/Logs/AlphaLensAI-backup.log"
@@ -14,7 +18,8 @@ BACKUP_PATH="$DAILY_DIR/$BACKUP_NAME"
 mkdir -p "$DAILY_DIR"
 mkdir -p "$(dirname "$LOG_FILE")"
 
-exec >> "$LOG_FILE" 2>&1
+# Show output in Terminal and save it to the log.
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo ""
 echo "=================================================="
@@ -22,6 +27,10 @@ echo "AlphaLens AI backup started: $(date)"
 echo "=================================================="
 
 cd "$PROJECT_DIR"
+
+# --------------------------------------------------
+# Safety checks
+# --------------------------------------------------
 
 if [ ! -d ".git" ]; then
     echo "ERROR: $PROJECT_DIR is not a Git repository."
@@ -33,16 +42,6 @@ if ! git remote get-url origin >/dev/null 2>&1; then
     exit 1
 fi
 
-# Prevent secrets from accidentally being committed.
-SECRET_FILES="$(git status --porcelain | awk '{print $2}' | grep -E '(^|/)\.env($|\.)' || true)"
-
-if [ -n "$SECRET_FILES" ]; then
-    echo "ERROR: An environment/secrets file is not ignored:"
-    echo "$SECRET_FILES"
-    echo "Backup stopped to protect API keys."
-    exit 1
-fi
-
 BRANCH="$(git branch --show-current)"
 
 if [ -z "$BRANCH" ]; then
@@ -50,49 +49,94 @@ if [ -z "$BRANCH" ]; then
     exit 1
 fi
 
+# Stop if any .env file is tracked by Git.
+TRACKED_SECRET_FILES="$(git ls-files | grep -E '(^|/)\.env($|\.)' || true)"
+
+if [ -n "$TRACKED_SECRET_FILES" ]; then
+    echo "ERROR: The following secret files are tracked by Git:"
+    echo "$TRACKED_SECRET_FILES"
+    echo "Backup stopped to protect your API keys."
+    exit 1
+fi
+
 echo "Project: $PROJECT_DIR"
 echo "Branch: $BRANCH"
 
-# Add and commit new work.
+# --------------------------------------------------
+# Save work to local Git
+# --------------------------------------------------
+
 git add -A
 
 if git diff --cached --quiet; then
     echo "No new project changes to commit."
 else
     git commit -m "Automatic daily backup ${TIMESTAMP}"
-    echo "Created commit:"
+
+    echo "Created local Git commit:"
     git log -1 --oneline
 fi
 
-# Push local work to GitHub.
+# --------------------------------------------------
+# Push to GitHub
+# --------------------------------------------------
+
 echo "Pushing to GitHub..."
 git push origin "$BRANCH"
 
-# Create a clean ZIP without large/generated/private files.
+# --------------------------------------------------
+# Create clean ZIP archive
+# --------------------------------------------------
+
 echo "Creating ZIP backup..."
 
-ditto \
-    -c \
-    -k \
-    --keepParent \
-    --norsrc \
-    --exclude ".git" \
-    --exclude "node_modules" \
-    --exclude ".env" \
-    --exclude ".env.*" \
-    --exclude ".DS_Store" \
-    --exclude "*.log" \
-    --exclude "*.zip" \
-    "$PROJECT_DIR" \
-    "$BACKUP_PATH"
+cd "$PROJECT_PARENT"
 
-# Confirm the ZIP exists and is not empty.
+rm -f "$BACKUP_PATH"
+
+/usr/bin/zip -rq "$BACKUP_PATH" "$PROJECT_NAME" \
+    -x "$PROJECT_NAME/.git/*" \
+       "$PROJECT_NAME/node_modules/*" \
+       "$PROJECT_NAME/*/node_modules/*" \
+       "$PROJECT_NAME/*/*/node_modules/*" \
+       "$PROJECT_NAME/.env" \
+       "$PROJECT_NAME/.env.*" \
+       "$PROJECT_NAME/*/.env" \
+       "$PROJECT_NAME/*/.env.*" \
+       "$PROJECT_NAME/*/*/.env" \
+       "$PROJECT_NAME/*/*/.env.*" \
+       "$PROJECT_NAME/*.zip" \
+       "$PROJECT_NAME/*/*.zip" \
+       "$PROJECT_NAME/*/*/*.zip" \
+       "$PROJECT_NAME/*.log" \
+       "$PROJECT_NAME/*/*.log" \
+       "$PROJECT_NAME/*/*/*.log" \
+       "$PROJECT_NAME/.DS_Store" \
+       "$PROJECT_NAME/*/.DS_Store" \
+       "$PROJECT_NAME/*/*/.DS_Store"
+
 if [ ! -s "$BACKUP_PATH" ]; then
     echo "ERROR: ZIP backup was not created correctly."
     exit 1
 fi
 
-# Verify GitHub and local Git contain the same commit.
+# --------------------------------------------------
+# Test ZIP integrity
+# --------------------------------------------------
+
+echo "Testing ZIP integrity..."
+
+if ! /usr/bin/unzip -tq "$BACKUP_PATH" >/dev/null; then
+    echo "ERROR: The ZIP file failed its integrity test."
+    exit 1
+fi
+
+# --------------------------------------------------
+# Verify GitHub matches local Git
+# --------------------------------------------------
+
+cd "$PROJECT_DIR"
+
 git fetch origin "$BRANCH"
 
 LOCAL_COMMIT="$(git rev-parse HEAD)"
@@ -106,9 +150,14 @@ if [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
 fi
 
 echo ""
+echo "=================================================="
 echo "BACKUP COMPLETED SUCCESSFULLY"
+echo "=================================================="
 echo "Local Git: $LOCAL_COMMIT"
 echo "GitHub: origin/$BRANCH"
 echo "Synced ZIP: $BACKUP_PATH"
 echo "ZIP size: $(du -h "$BACKUP_PATH" | awk '{print $1}')"
 echo "Completed: $(date)"
+EOF
+
+chmod +x /Users/apple/AlphaLensAI/backup.sh
