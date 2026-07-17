@@ -1,4 +1,3 @@
-cat > /Users/apple/AlphaLensAI/backup.sh <<'EOF'
 #!/bin/bash
 
 set -Eeuo pipefail
@@ -270,6 +269,3 @@ echo "Archive size: $ARCHIVE_SIZE"
 echo "Archived entries: $ARCHIVE_FILE_COUNT"
 echo "Completed: $(date)"
 echo "=================================================="
-EOF
-
-chmod +x /Users/apple/AlphaLensAI/backup.sh
