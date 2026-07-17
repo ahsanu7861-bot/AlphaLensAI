@@ -11,9 +11,9 @@ const {
   setCache
 } = require("../utils/cache");
 
-// ============================
+// ==================================================
 // Helpers
-// ============================
+// ==================================================
 
 function normalizeSymbol(symbol) {
   return String(symbol || "")
@@ -29,9 +29,53 @@ function toNumber(value, fallback = null) {
     : fallback;
 }
 
-// ============================
+function normalizeLiveCacheMetadata(
+  cache
+) {
+  if (
+    !cache ||
+    typeof cache !== "object"
+  ) {
+    return {
+      status: "UNKNOWN",
+      hit: false,
+      ttlSeconds: 20,
+      ageSeconds: 0,
+      expiresInSeconds: 0
+    };
+  }
+
+  return {
+    status:
+      cache.status ||
+      (cache.hit ? "HIT" : "MISS"),
+
+    hit:
+      cache.hit === true,
+
+    ttlSeconds:
+      toNumber(
+        cache.ttlSeconds,
+        20
+      ),
+
+    ageSeconds:
+      toNumber(
+        cache.ageSeconds,
+        0
+      ),
+
+    expiresInSeconds:
+      toNumber(
+        cache.expiresInSeconds,
+        0
+      )
+  };
+}
+
+// ==================================================
 // Normalize Column-Based OHLCV
-// ============================
+// ==================================================
 
 function normalizeColumnData(data) {
   if (
@@ -43,21 +87,56 @@ function normalizeColumnData(data) {
   }
 
   const dates = data.t;
-  const opens = Array.isArray(data.o) ? data.o : [];
-  const highs = Array.isArray(data.h) ? data.h : [];
-  const lows = Array.isArray(data.l) ? data.l : [];
-  const closes = Array.isArray(data.c) ? data.c : [];
-  const volumes = Array.isArray(data.v) ? data.v : [];
+  const opens =
+    Array.isArray(data.o)
+      ? data.o
+      : [];
+
+  const highs =
+    Array.isArray(data.h)
+      ? data.h
+      : [];
+
+  const lows =
+    Array.isArray(data.l)
+      ? data.l
+      : [];
+
+  const closes =
+    Array.isArray(data.c)
+      ? data.c
+      : [];
+
+  const volumes =
+    Array.isArray(data.v)
+      ? data.v
+      : [];
 
   const bars = [];
 
-  for (let index = 0; index < dates.length; index += 1) {
+  for (
+    let index = 0;
+    index < dates.length;
+    index += 1
+  ) {
     const date = dates[index];
-    const open = toNumber(opens[index]);
-    const high = toNumber(highs[index]);
-    const low = toNumber(lows[index]);
-    const close = toNumber(closes[index]);
-    const volume = toNumber(volumes[index], 0);
+    const open =
+      toNumber(opens[index]);
+
+    const high =
+      toNumber(highs[index]);
+
+    const low =
+      toNumber(lows[index]);
+
+    const close =
+      toNumber(closes[index]);
+
+    const volume =
+      toNumber(
+        volumes[index],
+        0
+      );
 
     if (
       !date ||
@@ -80,13 +159,16 @@ function normalizeColumnData(data) {
   }
 
   return bars.sort((a, b) => {
-    return new Date(a.date) - new Date(b.date);
+    return (
+      new Date(a.date) -
+      new Date(b.date)
+    );
   });
 }
 
-// ============================
+// ==================================================
 // Normalize Array-Based OHLCV
-// ============================
+// ==================================================
 
 function normalizeArrayData(rawData) {
   if (!Array.isArray(rawData)) {
@@ -102,11 +184,23 @@ function normalizeArrayData(rawData) {
         bar.time ||
         null;
 
-      const open = toNumber(bar.open);
-      const high = toNumber(bar.high);
-      const low = toNumber(bar.low);
-      const close = toNumber(bar.close);
-      const volume = toNumber(bar.volume, 0);
+      const open =
+        toNumber(bar.open);
+
+      const high =
+        toNumber(bar.high);
+
+      const low =
+        toNumber(bar.low);
+
+      const close =
+        toNumber(bar.close);
+
+      const volume =
+        toNumber(
+          bar.volume,
+          0
+        );
 
       if (
         !date ||
@@ -129,13 +223,16 @@ function normalizeArrayData(rawData) {
     })
     .filter(Boolean)
     .sort((a, b) => {
-      return new Date(a.date) - new Date(b.date);
+      return (
+        new Date(a.date) -
+        new Date(b.date)
+      );
     });
 }
 
-// ============================
+// ==================================================
 // Universal Historical Normalizer
-// ============================
+// ==================================================
 
 function normalizeHistoricalBars(source) {
   if (!source) {
@@ -157,44 +254,67 @@ function normalizeHistoricalBars(source) {
     typeof source === "object" &&
     source.data
   ) {
-    return normalizeHistoricalBars(source.data);
+    return normalizeHistoricalBars(
+      source.data
+    );
   }
 
   if (
     typeof source === "object" &&
     source.bars
   ) {
-    return normalizeHistoricalBars(source.bars);
+    return normalizeHistoricalBars(
+      source.bars
+    );
   }
 
   if (
     typeof source === "object" &&
     source.history
   ) {
-    return normalizeHistoricalBars(source.history);
+    return normalizeHistoricalBars(
+      source.history
+    );
   }
 
   return [];
 }
 
-// ============================
+// ==================================================
 // Build Legacy Column Data
-// ============================
+// ==================================================
 
 function buildColumnData(bars) {
   return {
-    t: bars.map((bar) => bar.date),
-    o: bars.map((bar) => bar.open),
-    h: bars.map((bar) => bar.high),
-    l: bars.map((bar) => bar.low),
-    c: bars.map((bar) => bar.close),
-    v: bars.map((bar) => bar.volume)
+    t: bars.map(
+      (bar) => bar.date
+    ),
+
+    o: bars.map(
+      (bar) => bar.open
+    ),
+
+    h: bars.map(
+      (bar) => bar.high
+    ),
+
+    l: bars.map(
+      (bar) => bar.low
+    ),
+
+    c: bars.map(
+      (bar) => bar.close
+    ),
+
+    v: bars.map(
+      (bar) => bar.volume
+    )
   };
 }
 
-// ============================
+// ==================================================
 // Historical Data Quality
-// ============================
+// ==================================================
 
 function buildHistoricalQuality(
   bars,
@@ -212,6 +332,7 @@ function buildHistoricalQuality(
       latestHistoricalDate: null,
       oldestHistoricalDate: null,
       cache: cacheStatus,
+
       warnings: [
         "No valid historical OHLCV bars were available."
       ]
@@ -224,12 +345,15 @@ function buildHistoricalQuality(
     );
   }
 
-  const invalidVolumeBars = bars.filter((bar) => {
-    return (
-      !Number.isFinite(bar.volume) ||
-      bar.volume < 0
-    );
-  }).length;
+  const invalidVolumeBars =
+    bars.filter((bar) => {
+      return (
+        !Number.isFinite(
+          bar.volume
+        ) ||
+        bar.volume < 0
+      );
+    }).length;
 
   if (invalidVolumeBars > 0) {
     warnings.push(
@@ -240,7 +364,9 @@ function buildHistoricalQuality(
   const duplicateDates =
     bars.length -
     new Set(
-      bars.map((bar) => bar.date)
+      bars.map(
+        (bar) => bar.date
+      )
     ).size;
 
   if (duplicateDates > 0) {
@@ -255,10 +381,13 @@ function buildHistoricalQuality(
         ? "Degraded"
         : "Good",
 
-    historicalBars: bars.length,
+    historicalBars:
+      bars.length,
 
     latestHistoricalDate:
-      bars[bars.length - 1]?.date || null,
+      bars[
+        bars.length - 1
+      ]?.date || null,
 
     oldestHistoricalDate:
       bars[0]?.date || null,
@@ -268,9 +397,9 @@ function buildHistoricalQuality(
   };
 }
 
-// ============================
+// ==================================================
 // Live Market Data — Finnhub
-// ============================
+// ==================================================
 
 async function getMarketData(symbol) {
   const normalizedSymbol =
@@ -283,12 +412,24 @@ async function getMarketData(symbol) {
       success: false,
       provider: "Finnhub",
       symbol: normalizedSymbol,
+
       error:
         "A valid ticker symbol is required.",
 
+      cache: {
+        status: "BYPASS",
+        hit: false,
+        ttlSeconds: 20,
+        ageSeconds: 0,
+        expiresInSeconds: 0
+      },
+
       performance: {
         durationMs:
-          Date.now() - startedAt
+          Date.now() -
+          startedAt,
+
+        cacheHit: false
       }
     };
   }
@@ -299,33 +440,67 @@ async function getMarketData(symbol) {
         normalizedSymbol
       );
 
+    const cache =
+      normalizeLiveCacheMetadata(
+        result?.cache
+      );
+
     if (result?.success === true) {
       return {
         ...result,
 
         symbol:
           result.symbol ||
+          result.data?.symbol ||
           normalizedSymbol,
+
+        cache,
 
         performance: {
           durationMs:
-            Date.now() - startedAt
+            Date.now() -
+            startedAt,
+
+          cacheHit:
+            cache.hit,
+
+          source:
+            cache.hit
+              ? "CACHE"
+              : "FINNHUB"
         }
       };
     }
 
     return {
       success: false,
-      provider: "Finnhub",
-      symbol: normalizedSymbol,
+
+      provider:
+        result?.provider ||
+        "Finnhub",
+
+      symbol:
+        result?.symbol ||
+        normalizedSymbol,
 
       error:
         result?.error ||
         "Unable to fetch live market data.",
 
+      cache,
+
       performance: {
         durationMs:
-          Date.now() - startedAt
+          Date.now() -
+          startedAt,
+
+        cacheHit:
+          cache.hit,
+
+        source:
+          cache.hit
+            ? "CACHE"
+            : "FINNHUB"
       }
     };
   } catch (error) {
@@ -338,21 +513,36 @@ async function getMarketData(symbol) {
       success: false,
       provider: "Finnhub",
       symbol: normalizedSymbol,
+
       error:
         "Unable to fetch live market data.",
-      details: error.message,
+
+      details:
+        error.message,
+
+      cache: {
+        status: "ERROR",
+        hit: false,
+        ttlSeconds: 20,
+        ageSeconds: 0,
+        expiresInSeconds: 0
+      },
 
       performance: {
         durationMs:
-          Date.now() - startedAt
+          Date.now() -
+          startedAt,
+
+        cacheHit: false,
+        source: "FINNHUB"
       }
     };
   }
 }
 
-// ============================
+// ==================================================
 // Historical Data — Shared OHLCV
-// ============================
+// ==================================================
 
 async function getHistory(symbol) {
   const normalizedSymbol =
@@ -365,12 +555,15 @@ async function getHistory(symbol) {
       success: false,
       provider: "AlphaVantage",
       symbol: normalizedSymbol,
+
       error:
         "A valid ticker symbol is required.",
 
       performance: {
         durationMs:
-          Date.now() - startedAt,
+          Date.now() -
+          startedAt,
+
         cacheHit: false
       }
     };
@@ -380,9 +573,9 @@ async function getHistory(symbol) {
     `history_${normalizedSymbol}`;
 
   try {
-    // ============================
+    // ==============================================
     // Cache Check
-    // ============================
+    // ==============================================
 
     const cachedResult =
       getCache(cacheKey);
@@ -400,12 +593,15 @@ async function getHistory(symbol) {
           success: false,
           provider: "AlphaVantage",
           symbol: normalizedSymbol,
+
           error:
             "Cached historical data could not be normalized.",
 
           performance: {
             durationMs:
-              Date.now() - startedAt,
+              Date.now() -
+              startedAt,
+
             cacheHit: true
           }
         };
@@ -423,11 +619,11 @@ async function getHistory(symbol) {
 
         symbol: normalizedSymbol,
 
-        // Existing services can still use data.c,
+        // Existing services can use data.c,
         // data.o, data.h, data.l and data.v.
         data,
 
-        // New shared-OHLCV services can use bars.
+        // Shared-OHLCV services use bars.
         bars,
 
         cache: "HIT",
@@ -440,15 +636,17 @@ async function getHistory(symbol) {
 
         performance: {
           durationMs:
-            Date.now() - startedAt,
+            Date.now() -
+            startedAt,
+
           cacheHit: true
         }
       };
     }
 
-    // ============================
+    // ==============================================
     // Alpha Vantage Fetch
-    // ============================
+    // ==============================================
 
     const result =
       await getHistoricalData(
@@ -463,7 +661,8 @@ async function getHistory(symbol) {
           result?.provider ||
           "AlphaVantage",
 
-        symbol: normalizedSymbol,
+        symbol:
+          normalizedSymbol,
 
         error:
           result?.error ||
@@ -471,7 +670,9 @@ async function getHistory(symbol) {
 
         performance: {
           durationMs:
-            Date.now() - startedAt,
+            Date.now() -
+            startedAt,
+
           cacheHit: false
         }
       };
@@ -493,14 +694,17 @@ async function getHistory(symbol) {
           result.provider ||
           "AlphaVantage",
 
-        symbol: normalizedSymbol,
+        symbol:
+          normalizedSymbol,
 
         error:
           "Historical data was returned, but no valid OHLCV bars could be normalized.",
 
         performance: {
           durationMs:
-            Date.now() - startedAt,
+            Date.now() -
+            startedAt,
+
           cacheHit: false
         }
       };
@@ -516,16 +720,17 @@ async function getHistory(symbol) {
         result.provider ||
         "AlphaVantage",
 
-      symbol: normalizedSymbol,
+      symbol:
+        normalizedSymbol,
 
       // Legacy structure
       data,
 
-      // New shared OHLCV structure
+      // Shared OHLCV structure
       bars
     };
 
-    // Cache for 30 minutes
+    // Existing cache utility uses minutes.
     setCache(
       cacheKey,
       normalizedResult,
@@ -545,7 +750,9 @@ async function getHistory(symbol) {
 
       performance: {
         durationMs:
-          Date.now() - startedAt,
+          Date.now() -
+          startedAt,
+
         cacheHit: false
       }
     };
@@ -563,11 +770,14 @@ async function getHistory(symbol) {
       error:
         "Unable to fetch historical market data.",
 
-      details: error.message,
+      details:
+        error.message,
 
       performance: {
         durationMs:
-          Date.now() - startedAt,
+          Date.now() -
+          startedAt,
+
         cacheHit: false
       }
     };
