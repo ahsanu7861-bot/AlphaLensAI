@@ -1,4 +1,3 @@
-cat > /Users/apple/AlphaLensAI/backup.sh <<'EOF'
 #!/bin/bash
 
 set -e
@@ -121,6 +120,3 @@ mkdir -p "$(dirname "$LOG_FILE")"
     echo "Completed: $(date)"
 
 } 2>&1 | tee -a "$LOG_FILE"
-EOF
-
-chmod +x /Users/apple/AlphaLensAI/backup.sh
