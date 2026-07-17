@@ -28,32 +28,46 @@ const {
 } = require("./candlestickService");
 
 const {
+  analyzeSupportResistance
+} = require(
+  "../analysis/structure/supportResistanceEngine"
+);
+
+const {
   analyzeTrend
-} = require("../analysis/trend/trendEngine");
+} = require(
+  "../analysis/trend/trendEngine"
+);
 
 const {
   analyzeAgreement
-} = require("../analysis/agreement/agreementEngine");
+} = require(
+  "../analysis/agreement/agreementEngine"
+);
 
 const {
   analyzeExplanation
-} = require("../analysis/explanation/explanationEngine");
+} = require(
+  "../analysis/explanation/explanationEngine"
+);
 
 const {
   analyzeRisk
-} = require("../analysis/risk/riskEngine");
+} = require(
+  "../analysis/risk/riskEngine"
+);
 
-// ============================
+// ==================================================
 // API Configuration
-// ============================
+// ==================================================
 
 const API_VERSION =
   process.env.API_VERSION ||
   "1.0.0";
 
-// ============================
+// ==================================================
 // Symbol Validation
-// ============================
+// ==================================================
 
 function normalizeSymbol(symbol) {
   return String(symbol || "")
@@ -61,9 +75,24 @@ function normalizeSymbol(symbol) {
     .toUpperCase();
 }
 
-// ============================
+// ==================================================
+// Numeric Helpers
+// ==================================================
+
+function toFiniteNumber(
+  value,
+  fallback = null
+) {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
+
+// ==================================================
 // Request ID
-// ============================
+// ==================================================
 
 function createRequestId() {
   if (
@@ -78,9 +107,9 @@ function createRequestId() {
     .toString("hex");
 }
 
-// ============================
+// ==================================================
 // Shared History Summary
-// ============================
+// ==================================================
 
 function buildSharedHistorySummary(
   history,
@@ -96,14 +125,14 @@ function buildSharedHistorySummary(
       ? history.data.c
       : [];
 
-  let latestHistoricalClose =
-    null;
+  let latestHistoricalClose = null;
 
   if (bars.length > 0) {
     latestHistoricalClose =
       Number(
-        bars[bars.length - 1]
-          ?.close
+        bars[
+          bars.length - 1
+        ]?.close
       );
   } else if (
     closePrices.length > 0
@@ -152,9 +181,9 @@ function buildSharedHistorySummary(
   };
 }
 
-// ============================
+// ==================================================
 // Price Context
-// ============================
+// ==================================================
 
 function buildPriceContext(
   market,
@@ -201,14 +230,32 @@ function buildPriceContext(
           historicalClose
         : null,
 
+    analysisPrice:
+      Number.isFinite(livePrice)
+        ? livePrice
+        : Number.isFinite(
+            historicalClose
+          )
+          ? historicalClose
+          : null,
+
+    analysisPriceSource:
+      Number.isFinite(livePrice)
+        ? "Live Market Price"
+        : Number.isFinite(
+            historicalClose
+          )
+          ? "Latest Historical Close"
+          : null,
+
     note:
       "Live price may differ from the latest completed daily historical close during an active market session."
   };
 }
 
-// ============================
+// ==================================================
 // Shared-OHLCV Status
-// ============================
+// ==================================================
 
 function buildRefactorStatus() {
   return {
@@ -227,22 +274,24 @@ function buildRefactorStatus() {
       "OBV",
       "RVOL",
       "Volume Spike",
-      "Candlestick"
+      "Candlestick",
+      "Support & Resistance"
     ],
 
     pendingSharedOHLCVConsumers: []
   };
 }
 
-// ============================
+// ==================================================
 // Data Quality
-// ============================
+// ==================================================
 
 function buildDataQuality({
   market,
   history,
   indicators,
-  failedIndicators = []
+  failedIndicators = [],
+  supportResistance = null
 }) {
   const warnings = [];
 
@@ -336,6 +385,32 @@ function buildDataQuality({
     }
   );
 
+  if (
+    supportResistance &&
+    supportResistance.success !==
+      true
+  ) {
+    warnings.push(
+      `Support & Resistance: ${
+        supportResistance.error ||
+        "Structural analysis failed."
+      }`
+    );
+  }
+
+  if (
+    Array.isArray(
+      supportResistance?.warnings
+    )
+  ) {
+    warnings.push(
+      ...supportResistance.warnings.map(
+        (warning) =>
+          `Support & Resistance: ${warning}`
+      )
+    );
+  }
+
   let status = "Good";
 
   if (
@@ -346,7 +421,12 @@ function buildDataQuality({
   } else if (
     warnings.length > 0 ||
     successfulIndicators <
-      totalIndicators
+      totalIndicators ||
+    (
+      supportResistance &&
+      supportResistance.success !==
+        true
+    )
   ) {
     status = "Degraded";
   }
@@ -381,6 +461,30 @@ function buildDataQuality({
         totalIndicators
     },
 
+    structure: {
+      supportResistanceAvailable:
+        supportResistance
+          ?.success === true,
+
+      supportZones:
+        Array.isArray(
+          supportResistance
+            ?.support
+        )
+          ? supportResistance
+              .support.length
+          : 0,
+
+      resistanceZones:
+        Array.isArray(
+          supportResistance
+            ?.resistance
+        )
+          ? supportResistance
+              .resistance.length
+          : 0
+    },
+
     providers: {
       live:
         market?.provider ||
@@ -388,7 +492,12 @@ function buildDataQuality({
 
       historical:
         history?.provider ||
-        "AlphaVantage"
+        "AlphaVantage",
+
+      structure:
+        supportResistance
+          ?.provider ||
+        "AlphaLens AI"
     },
 
     cache: {
@@ -406,9 +515,9 @@ function buildDataQuality({
   };
 }
 
-// ============================
+// ==================================================
 // Response Meta
-// ============================
+// ==================================================
 
 function buildMeta({
   requestId,
@@ -428,9 +537,9 @@ function buildMeta({
   };
 }
 
-// ============================
+// ==================================================
 // Error Response
-// ============================
+// ==================================================
 
 function buildErrorResponse({
   requestId,
@@ -477,9 +586,72 @@ function buildErrorResponse({
   };
 }
 
-// ============================
+// ==================================================
+// Performance Bottleneck
+// ==================================================
+
+function findPerformanceBottleneck({
+  marketMs,
+  historyMs,
+  indicatorMs,
+  structureMs,
+  analysisMs
+}) {
+  const stages = [
+    {
+      name: "Live Market Data",
+      durationMs:
+        toFiniteNumber(
+          marketMs,
+          0
+        )
+    },
+    {
+      name: "Historical Data",
+      durationMs:
+        toFiniteNumber(
+          historyMs,
+          0
+        )
+    },
+    {
+      name: "Indicators",
+      durationMs:
+        toFiniteNumber(
+          indicatorMs,
+          0
+        )
+    },
+    {
+      name: "Market Structure",
+      durationMs:
+        toFiniteNumber(
+          structureMs,
+          0
+        )
+    },
+    {
+      name: "Higher-Level Analysis",
+      durationMs:
+        toFiniteNumber(
+          analysisMs,
+          0
+        )
+    }
+  ];
+
+  stages.sort(
+    (first, second) =>
+      second.durationMs -
+      first.durationMs
+  );
+
+  return stages[0]?.name || null;
+}
+
+// ==================================================
 // Master Analysis Service
-// ============================
+// ==================================================
 
 async function getMasterAnalysis(
   symbol
@@ -517,9 +689,9 @@ async function getMasterAnalysis(
   }
 
   try {
-    // ============================
+    // ==============================================
     // Live Market Data
-    // ============================
+    // ==============================================
 
     const marketStartedAt =
       Date.now();
@@ -533,9 +705,9 @@ async function getMasterAnalysis(
       Date.now() -
       marketStartedAt;
 
-    // ============================
+    // ==============================================
     // Shared Historical OHLCV
-    // ============================
+    // ==============================================
 
     const historyStartedAt =
       Date.now();
@@ -564,14 +736,13 @@ async function getMasterAnalysis(
         historyMs:
           historyDurationMs,
 
-        indicatorMs:
-          0,
+        indicatorMs: 0,
 
-        analysisMs:
-          0,
+        structureMs: 0,
 
-        cacheHit:
-          false
+        analysisMs: 0,
+
+        cacheHit: false
       };
 
       return buildErrorResponse({
@@ -614,9 +785,9 @@ async function getMasterAnalysis(
         sharedHistory
       );
 
-    // ============================
+    // ==============================================
     // Indicator Calculations
-    // ============================
+    // ==============================================
 
     const indicatorsStartedAt =
       Date.now();
@@ -705,9 +876,9 @@ async function getMasterAnalysis(
       candlestick
     };
 
-    // ============================
+    // ==============================================
     // Failed Indicators
-    // ============================
+    // ==============================================
 
     const failedIndicators =
       Object.entries(indicators)
@@ -728,18 +899,19 @@ async function getMasterAnalysis(
           })
         );
 
-    const dataQuality =
-      buildDataQuality({
-        market,
-        history,
-        indicators,
-        failedIndicators
-      });
-
     if (
       failedIndicators.length >
       0
     ) {
+      const dataQuality =
+        buildDataQuality({
+          market,
+          history,
+          indicators,
+          failedIndicators,
+          supportResistance: null
+        });
+
       const performance = {
         totalMs:
           Date.now() -
@@ -754,8 +926,9 @@ async function getMasterAnalysis(
         indicatorMs:
           indicatorDurationMs,
 
-        analysisMs:
-          0,
+        structureMs: 0,
+
+        analysisMs: 0,
 
         cacheHit:
           history?.performance
@@ -795,9 +968,96 @@ async function getMasterAnalysis(
       });
     }
 
-    // ============================
+    // ==============================================
+    // Market Structure Analysis
+    // ==============================================
+
+    const structureStartedAt =
+      Date.now();
+
+    let supportResistance;
+
+    try {
+      supportResistance =
+        analyzeSupportResistance({
+          symbol:
+            normalizedSymbol,
+
+          bars:
+            Array.isArray(
+              history?.bars
+            )
+              ? history.bars
+              : [],
+
+          currentPrice:
+            priceContext
+              .analysisPrice,
+
+          options: {
+            pivotWindow: 5,
+            mergeThresholdPercent: 1,
+            maximumZonesPerSide: 5,
+            minimumBars: 20,
+            minimumTouches: 1
+          }
+        });
+    } catch (structureError) {
+      console.error(
+        `[${requestId}] Support & Resistance Error:`,
+        structureError
+      );
+
+      supportResistance = {
+        success: false,
+
+        provider:
+          "AlphaLens AI",
+
+        symbol:
+          normalizedSymbol,
+
+        error:
+          "Unable to complete support and resistance analysis.",
+
+        details:
+          structureError.message,
+
+        dataSource:
+          "Shared OHLCV"
+      };
+    }
+
+    const structureDurationMs =
+      Date.now() -
+      structureStartedAt;
+
+    const marketStructure = {
+      success:
+        supportResistance
+          ?.success === true,
+
+      symbol:
+        normalizedSymbol,
+
+      provider:
+        "AlphaLens AI",
+
+      supportResistance
+    };
+
+    const dataQuality =
+      buildDataQuality({
+        market,
+        history,
+        indicators,
+        failedIndicators,
+        supportResistance
+      });
+
+    // ==============================================
     // Higher-Level Analysis
-    // ============================
+    // ==============================================
 
     const analysisStartedAt =
       Date.now();
@@ -842,8 +1102,13 @@ async function getMasterAnalysis(
     };
 
     /*
-     * This internal structure is used by the
-     * Explanation and Risk engines.
+     * This internal structure is consumed by
+     * the Explanation and Risk engines.
+     *
+     * Support & Resistance is now included so
+     * those engines can use structural levels
+     * in future upgrades without changing the
+     * orchestration contract again.
      */
 
     const internalAnalysis = {
@@ -865,6 +1130,10 @@ async function getMasterAnalysis(
 
       indicators,
 
+      marketStructure,
+
+      supportResistance,
+
       trend,
 
       agreement
@@ -884,9 +1153,9 @@ async function getMasterAnalysis(
       Date.now() -
       analysisStartedAt;
 
-    // ============================
+    // ==============================================
     // Performance
-    // ============================
+    // ==============================================
 
     const performance = {
       totalMs:
@@ -902,6 +1171,9 @@ async function getMasterAnalysis(
       indicatorMs:
         indicatorDurationMs,
 
+      structureMs:
+        structureDurationMs,
+
       analysisMs:
         analysisDurationMs,
 
@@ -909,16 +1181,32 @@ async function getMasterAnalysis(
         history?.performance
           ?.cacheHit === true,
 
+      liveQuoteCacheHit:
+        market?.performance
+          ?.cacheHit === true,
+
       bottleneck:
-        marketDurationMs >=
-        historyDurationMs
-          ? "Live Market Data"
-          : "Historical Data"
+        findPerformanceBottleneck({
+          marketMs:
+            marketDurationMs,
+
+          historyMs:
+            historyDurationMs,
+
+          indicatorMs:
+            indicatorDurationMs,
+
+          structureMs:
+            structureDurationMs,
+
+          analysisMs:
+            analysisDurationMs
+        })
     };
 
-    // ============================
+    // ==============================================
     // Final API Contract
-    // ============================
+    // ==============================================
 
     return {
       success: true,
@@ -948,6 +1236,10 @@ async function getMasterAnalysis(
         sharedHistory,
 
         indicators,
+
+        marketStructure,
+
+        supportResistance,
 
         trend,
 
@@ -990,9 +1282,9 @@ async function getMasterAnalysis(
   }
 }
 
-// ============================
+// ==================================================
 // Export Service
-// ============================
+// ==================================================
 
 module.exports = {
   getMasterAnalysis
