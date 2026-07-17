@@ -9,28 +9,24 @@ const { getRSI } = require("./rsiService");
 const { getEMA } = require("./emaService");
 const { getSMA } = require("./smaService");
 const { getMACD } = require("./macdService");
-
-const {
-  getBollinger
-} = require("./bollingerService");
-
+const { getBollinger } = require("./bollingerService");
 const { getATR } = require("./atrService");
 const { getADX } = require("./adxService");
 const { getOBV } = require("./obvService");
 const { getRVOL } = require("./rvolService");
-
-const {
-  getVolumeSpike
-} = require("./volumeSpikeService");
-
-const {
-  getCandlestick
-} = require("./candlestickService");
+const { getVolumeSpike } = require("./volumeSpikeService");
+const { getCandlestick } = require("./candlestickService");
 
 const {
   analyzeSupportResistance
 } = require(
   "../analysis/structure/supportResistanceEngine"
+);
+
+const {
+  analyzeFibonacci
+} = require(
+  "../analysis/structure/fibonacciEngine"
 );
 
 const {
@@ -200,51 +196,47 @@ function buildPriceContext(
         ?.latestHistoricalClose
     );
 
+  const livePriceAvailable =
+    Number.isFinite(livePrice);
+
+  const historicalCloseAvailable =
+    Number.isFinite(
+      historicalClose
+    );
+
   return {
     livePrice:
-      Number.isFinite(livePrice)
+      livePriceAvailable
         ? livePrice
         : null,
 
     latestHistoricalClose:
-      Number.isFinite(
-        historicalClose
-      )
+      historicalCloseAvailable
         ? historicalClose
         : null,
 
-    livePriceAvailable:
-      Number.isFinite(livePrice),
+    livePriceAvailable,
 
-    historicalCloseAvailable:
-      Number.isFinite(
-        historicalClose
-      ),
+    historicalCloseAvailable,
 
     pricesMatch:
-      Number.isFinite(livePrice) &&
-      Number.isFinite(
-        historicalClose
-      )
+      livePriceAvailable &&
+      historicalCloseAvailable
         ? livePrice ===
           historicalClose
         : null,
 
     analysisPrice:
-      Number.isFinite(livePrice)
+      livePriceAvailable
         ? livePrice
-        : Number.isFinite(
-            historicalClose
-          )
+        : historicalCloseAvailable
           ? historicalClose
           : null,
 
     analysisPriceSource:
-      Number.isFinite(livePrice)
+      livePriceAvailable
         ? "Live Market Price"
-        : Number.isFinite(
-            historicalClose
-          )
+        : historicalCloseAvailable
           ? "Latest Historical Close"
           : null,
 
@@ -275,11 +267,55 @@ function buildRefactorStatus() {
       "RVOL",
       "Volume Spike",
       "Candlestick",
-      "Support & Resistance"
+      "Support & Resistance",
+      "Fibonacci"
     ],
 
     pendingSharedOHLCVConsumers: []
   };
+}
+
+// ==================================================
+// Structure Warning Helper
+// ==================================================
+
+function addStructureWarnings({
+  warnings,
+  name,
+  result
+}) {
+  if (!result) {
+    warnings.push(
+      `${name}: No result was returned.`
+    );
+
+    return;
+  }
+
+  if (
+    result.success !== true
+  ) {
+    warnings.push(
+      `${name}: ${
+        result.error ||
+        "Analysis failed."
+      }`
+    );
+  }
+
+  if (
+    Array.isArray(
+      result.warnings
+    )
+  ) {
+    result.warnings.forEach(
+      (warning) => {
+        warnings.push(
+          `${name}: ${warning}`
+        );
+      }
+    );
+  }
 }
 
 // ==================================================
@@ -291,7 +327,8 @@ function buildDataQuality({
   history,
   indicators,
   failedIndicators = [],
-  supportResistance = null
+  supportResistance = null,
+  fibonacci = null
 }) {
   const warnings = [];
 
@@ -385,31 +422,28 @@ function buildDataQuality({
     }
   );
 
-  if (
-    supportResistance &&
-    supportResistance.success !==
-      true
-  ) {
-    warnings.push(
-      `Support & Resistance: ${
-        supportResistance.error ||
-        "Structural analysis failed."
-      }`
-    );
-  }
+  addStructureWarnings({
+    warnings,
+    name:
+      "Support & Resistance",
+    result:
+      supportResistance
+  });
 
-  if (
-    Array.isArray(
-      supportResistance?.warnings
-    )
-  ) {
-    warnings.push(
-      ...supportResistance.warnings.map(
-        (warning) =>
-          `Support & Resistance: ${warning}`
-      )
-    );
-  }
+  addStructureWarnings({
+    warnings,
+    name:
+      "Fibonacci",
+    result:
+      fibonacci
+  });
+
+  const supportResistanceAvailable =
+    supportResistance?.success ===
+    true;
+
+  const fibonacciAvailable =
+    fibonacci?.success === true;
 
   let status = "Good";
 
@@ -422,11 +456,8 @@ function buildDataQuality({
     warnings.length > 0 ||
     successfulIndicators <
       totalIndicators ||
-    (
-      supportResistance &&
-      supportResistance.success !==
-        true
-    )
+    !supportResistanceAvailable ||
+    !fibonacciAvailable
   ) {
     status = "Degraded";
   }
@@ -462,9 +493,26 @@ function buildDataQuality({
     },
 
     structure: {
-      supportResistanceAvailable:
-        supportResistance
-          ?.success === true,
+      supportResistanceAvailable,
+
+      fibonacciAvailable,
+
+      successful:
+        [
+          supportResistanceAvailable,
+          fibonacciAvailable
+        ].filter(Boolean).length,
+
+      failed:
+        [
+          supportResistanceAvailable,
+          fibonacciAvailable
+        ].filter(
+          (available) =>
+            !available
+        ).length,
+
+      total: 2,
 
       supportZones:
         Array.isArray(
@@ -482,6 +530,13 @@ function buildDataQuality({
         )
           ? supportResistance
               .resistance.length
+          : 0,
+
+      fibonacciLevels:
+        Array.isArray(
+          fibonacci?.levels
+        )
+          ? fibonacci.levels.length
           : 0
     },
 
@@ -495,8 +550,6 @@ function buildDataQuality({
         "AlphaVantage",
 
       structure:
-        supportResistance
-          ?.provider ||
         "AlphaLens AI"
     },
 
@@ -599,7 +652,9 @@ function findPerformanceBottleneck({
 }) {
   const stages = [
     {
-      name: "Live Market Data",
+      name:
+        "Live Market Data",
+
       durationMs:
         toFiniteNumber(
           marketMs,
@@ -607,7 +662,9 @@ function findPerformanceBottleneck({
         )
     },
     {
-      name: "Historical Data",
+      name:
+        "Historical Data",
+
       durationMs:
         toFiniteNumber(
           historyMs,
@@ -615,7 +672,9 @@ function findPerformanceBottleneck({
         )
     },
     {
-      name: "Indicators",
+      name:
+        "Indicators",
+
       durationMs:
         toFiniteNumber(
           indicatorMs,
@@ -623,7 +682,9 @@ function findPerformanceBottleneck({
         )
     },
     {
-      name: "Market Structure",
+      name:
+        "Market Structure",
+
       durationMs:
         toFiniteNumber(
           structureMs,
@@ -631,7 +692,9 @@ function findPerformanceBottleneck({
         )
     },
     {
-      name: "Higher-Level Analysis",
+      name:
+        "Higher-Level Analysis",
+
       durationMs:
         toFiniteNumber(
           analysisMs,
@@ -647,6 +710,69 @@ function findPerformanceBottleneck({
   );
 
   return stages[0]?.name || null;
+}
+
+// ==================================================
+// Safe Structure Engine Runner
+// ==================================================
+
+function runStructureEngine({
+  requestId,
+  name,
+  symbol,
+  analysisFunction,
+  input
+}) {
+  const startedAt =
+    Date.now();
+
+  try {
+    const result =
+      analysisFunction(input);
+
+    return {
+      result,
+
+      durationMs:
+        Date.now() -
+        startedAt
+    };
+  } catch (error) {
+    console.error(
+      `[${requestId}] ${name} Error:`,
+      error
+    );
+
+    return {
+      result: {
+        success: false,
+
+        provider:
+          "AlphaLens AI",
+
+        symbol,
+
+        error:
+          `Unable to complete ${name.toLowerCase()} analysis.`,
+
+        details:
+          error.message,
+
+        dataSource:
+          "Shared OHLCV",
+
+        performance: {
+          durationMs:
+            Date.now() -
+            startedAt
+        }
+      },
+
+      durationMs:
+        Date.now() -
+        startedAt
+    };
+  }
 }
 
 // ==================================================
@@ -739,6 +865,10 @@ async function getMasterAnalysis(
         indicatorMs: 0,
 
         structureMs: 0,
+
+        supportResistanceMs: 0,
+
+        fibonacciMs: 0,
 
         analysisMs: 0,
 
@@ -903,15 +1033,6 @@ async function getMasterAnalysis(
       failedIndicators.length >
       0
     ) {
-      const dataQuality =
-        buildDataQuality({
-          market,
-          history,
-          indicators,
-          failedIndicators,
-          supportResistance: null
-        });
-
       const performance = {
         totalMs:
           Date.now() -
@@ -927,6 +1048,10 @@ async function getMasterAnalysis(
           indicatorDurationMs,
 
         structureMs: 0,
+
+        supportResistanceMs: 0,
+
+        fibonacciMs: 0,
 
         analysisMs: 0,
 
@@ -949,7 +1074,17 @@ async function getMasterAnalysis(
         details:
           failedIndicators,
 
-        dataQuality,
+        dataQuality:
+          buildDataQuality({
+            market,
+            history,
+            indicators,
+            failedIndicators,
+            supportResistance:
+              null,
+            fibonacci:
+              null
+          }),
 
         performance,
 
@@ -975,20 +1110,32 @@ async function getMasterAnalysis(
     const structureStartedAt =
       Date.now();
 
-    let supportResistance;
+    const sharedBars =
+      Array.isArray(
+        history?.bars
+      )
+        ? history.bars
+        : [];
 
-    try {
-      supportResistance =
-        analyzeSupportResistance({
+    const supportResistanceRun =
+      runStructureEngine({
+        requestId,
+
+        name:
+          "Support & Resistance",
+
+        symbol:
+          normalizedSymbol,
+
+        analysisFunction:
+          analyzeSupportResistance,
+
+        input: {
           symbol:
             normalizedSymbol,
 
           bars:
-            Array.isArray(
-              history?.bars
-            )
-              ? history.bars
-              : [],
+            sharedBars,
 
           currentPrice:
             priceContext
@@ -996,37 +1143,66 @@ async function getMasterAnalysis(
 
           options: {
             pivotWindow: 5,
-            mergeThresholdPercent: 1,
-            maximumZonesPerSide: 5,
-            minimumBars: 20,
-            minimumTouches: 1
+
+            mergeThresholdPercent:
+              1,
+
+            maximumZonesPerSide:
+              5,
+
+            minimumBars:
+              20,
+
+            minimumTouches:
+              1
           }
-        });
-    } catch (structureError) {
-      console.error(
-        `[${requestId}] Support & Resistance Error:`,
-        structureError
-      );
+        }
+      });
 
-      supportResistance = {
-        success: false,
+    const supportResistance =
+      supportResistanceRun.result;
 
-        provider:
-          "AlphaLens AI",
+    const fibonacciRun =
+      runStructureEngine({
+        requestId,
+
+        name:
+          "Fibonacci",
 
         symbol:
           normalizedSymbol,
 
-        error:
-          "Unable to complete support and resistance analysis.",
+        analysisFunction:
+          analyzeFibonacci,
 
-        details:
-          structureError.message,
+        input: {
+          symbol:
+            normalizedSymbol,
 
-        dataSource:
-          "Shared OHLCV"
-      };
-    }
+          history,
+
+          bars:
+            sharedBars,
+
+          currentPrice:
+            priceContext
+              .analysisPrice,
+
+          options: {
+            pivotWindow: 5,
+
+            lookbackBars: 100,
+
+            minimumBars: 20,
+
+            proximityThresholdPercent:
+              1
+          }
+        }
+      });
+
+    const fibonacci =
+      fibonacciRun.result;
 
     const structureDurationMs =
       Date.now() -
@@ -1035,6 +1211,14 @@ async function getMasterAnalysis(
     const marketStructure = {
       success:
         supportResistance
+          ?.success === true &&
+        fibonacci
+          ?.success === true,
+
+      partialSuccess:
+        supportResistance
+          ?.success === true ||
+        fibonacci
           ?.success === true,
 
       symbol:
@@ -1043,7 +1227,22 @@ async function getMasterAnalysis(
       provider:
         "AlphaLens AI",
 
-      supportResistance
+      supportResistance,
+
+      fibonacci,
+
+      performance: {
+        totalMs:
+          structureDurationMs,
+
+        supportResistanceMs:
+          supportResistanceRun
+            .durationMs,
+
+        fibonacciMs:
+          fibonacciRun
+            .durationMs
+      }
     };
 
     const dataQuality =
@@ -1052,7 +1251,8 @@ async function getMasterAnalysis(
         history,
         indicators,
         failedIndicators,
-        supportResistance
+        supportResistance,
+        fibonacci
       });
 
     // ==============================================
@@ -1101,16 +1301,6 @@ async function getMasterAnalysis(
       ...agreementResult
     };
 
-    /*
-     * This internal structure is consumed by
-     * the Explanation and Risk engines.
-     *
-     * Support & Resistance is now included so
-     * those engines can use structural levels
-     * in future upgrades without changing the
-     * orchestration contract again.
-     */
-
     const internalAnalysis = {
       success: true,
 
@@ -1133,6 +1323,8 @@ async function getMasterAnalysis(
       marketStructure,
 
       supportResistance,
+
+      fibonacci,
 
       trend,
 
@@ -1173,6 +1365,14 @@ async function getMasterAnalysis(
 
       structureMs:
         structureDurationMs,
+
+      supportResistanceMs:
+        supportResistanceRun
+          .durationMs,
+
+      fibonacciMs:
+        fibonacciRun
+          .durationMs,
 
       analysisMs:
         analysisDurationMs,
@@ -1238,8 +1438,6 @@ async function getMasterAnalysis(
         indicators,
 
         marketStructure,
-
-        supportResistance,
 
         trend,
 
