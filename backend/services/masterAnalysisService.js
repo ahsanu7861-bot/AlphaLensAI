@@ -18,6 +18,12 @@ const { getVolumeSpike } = require("./volumeSpikeService");
 const { getCandlestick } = require("./candlestickService");
 
 const {
+  getShariahCompliance
+} = require(
+  "./shariahComplianceService"
+);
+
+const {
   analyzeSupportResistance
 } = require(
   "../analysis/structure/supportResistanceEngine"
@@ -335,7 +341,8 @@ function buildDataQuality({
   indicators,
   failedIndicators = [],
   supportResistance = null,
-  fibonacci = null
+  fibonacci = null,
+  shariah = null
 }) {
   const warnings = [];
 
@@ -445,6 +452,29 @@ function buildDataQuality({
       fibonacci
   });
 
+  const shariahAvailable =
+    shariah?.success === true;
+
+  const shariahStatus =
+    shariah?.summary?.status ||
+    "UNKNOWN";
+
+  if (!shariahAvailable) {
+    warnings.push(
+      `Shariah Compliance: ${
+        shariah?.providerError?.message ||
+        shariah?.summary?.explanation ||
+        "Screening is unavailable."
+      }`
+    );
+  } else if (
+    shariahStatus === "UNKNOWN"
+  ) {
+    warnings.push(
+      "Shariah Compliance: The provider returned an UNKNOWN screening status."
+    );
+  }
+
   const supportResistanceAvailable =
     supportResistance?.success ===
     true;
@@ -464,7 +494,9 @@ function buildDataQuality({
     successfulIndicators <
       totalIndicators ||
     !supportResistanceAvailable ||
-    !fibonacciAvailable
+    !fibonacciAvailable ||
+    !shariahAvailable ||
+    shariahStatus === "UNKNOWN"
   ) {
     status = "Degraded";
   }
@@ -547,6 +579,33 @@ function buildDataQuality({
           : 0
     },
 
+    shariah: {
+      available:
+        shariahAvailable,
+
+      status:
+        shariahStatus,
+
+      confidence:
+        shariah?.summary
+          ?.confidence ||
+        "UNKNOWN",
+
+      provider:
+        shariah?.provider?.name ||
+        null,
+
+      lastCheckedAt:
+        shariah?.verification
+          ?.lastCheckedAt ||
+        null,
+
+      fromCache:
+        shariah?.metadata
+          ?.providerMetadata
+          ?.fromCache === true
+    },
+
     providers: {
       live:
         market?.provider ||
@@ -557,7 +616,11 @@ function buildDataQuality({
         "AlphaVantage",
 
       structure:
-        "AlphaLens AI"
+        "AlphaLens AI",
+
+      shariah:
+        shariah?.provider?.name ||
+        "Halal Terminal"
     },
 
     cache: {
@@ -655,7 +718,8 @@ function findPerformanceBottleneck({
   historyMs,
   indicatorMs,
   structureMs,
-  analysisMs
+  analysisMs,
+  shariahMs
 }) {
   const stages = [
     {
@@ -705,6 +769,16 @@ function findPerformanceBottleneck({
       durationMs:
         toFiniteNumber(
           analysisMs,
+          0
+        )
+    },
+    {
+      name:
+        "Shariah Compliance",
+
+      durationMs:
+        toFiniteNumber(
+          shariahMs,
           0
         )
     }
@@ -783,6 +857,155 @@ function runStructureEngine({
 }
 
 // ==================================================
+// Safe Shariah Compliance Runner
+// ==================================================
+
+async function runShariahCompliance({
+  requestId,
+  symbol
+}) {
+  const startedAt = Date.now();
+
+  try {
+    const result =
+      await getShariahCompliance(
+        symbol
+      );
+
+    return {
+      result,
+
+      durationMs:
+        Date.now() -
+        startedAt
+    };
+  } catch (error) {
+    console.error(
+      `[${requestId}] Shariah Compliance Error:`,
+      error
+    );
+
+    return {
+      result: {
+        success: false,
+
+        symbol,
+
+        module: {
+          id:
+            "shariah_compliance",
+
+          name:
+            "Shariah Compliance",
+
+          version:
+            "0.5.0"
+        },
+
+        summary: {
+          headline:
+            `Shariah compliance could not be verified for ${symbol}.`,
+
+          status:
+            "UNKNOWN",
+
+          confidence:
+            "UNKNOWN",
+
+          explanation:
+            error.message ||
+            "The Shariah screening service failed.",
+
+          purificationRatePercent:
+            null,
+
+          purificationRateFormatted:
+            null,
+
+          methodologiesPassed:
+            0,
+
+          methodologiesFailed:
+            0,
+
+          methodologiesUnknown:
+            0,
+
+          methodologiesTotal:
+            0
+        },
+
+        company: null,
+
+        methodologies: [],
+
+        businessActivity: {
+          status: "UNKNOWN",
+          passed: null,
+          reason: null,
+          segments: [],
+          revenueRatios: null
+        },
+
+        financialScreen: {
+          status: "UNKNOWN",
+          passed: null,
+          ratios: {},
+          financials: null
+        },
+
+        verification: null,
+
+        disclaimers: [
+          {
+            id:
+              "alphalens-shariah",
+
+            severity:
+              "religious",
+
+            text:
+              "AlphaLens AI reports automated screening data and does not issue a fatwa or scholarly attestation.",
+
+            url: null
+          }
+        ],
+
+        provider: {
+          id:
+            "halal_terminal",
+
+          name:
+            "Halal Terminal"
+        },
+
+        providerError: {
+          code:
+            "SHARIAH_SERVICE_ERROR",
+
+          message:
+            error.message ||
+            "The Shariah screening service failed."
+        },
+
+        metadata: {
+          generatedAt:
+            new Date()
+              .toISOString(),
+
+          providerMetadata:
+            null
+        }
+      },
+
+      durationMs:
+        Date.now() -
+        startedAt
+    };
+  }
+}
+
+// ==================================================
 // Master Analysis Service
 // ==================================================
 
@@ -823,6 +1046,17 @@ async function getMasterAnalysis(
 
   try {
     // ==============================================
+    // Shariah Compliance (Parallel Background Task)
+    // ==============================================
+
+    const shariahRunPromise =
+      runShariahCompliance({
+        requestId,
+        symbol:
+          normalizedSymbol
+      });
+
+    // ==============================================
     // Live Market Data
     // ==============================================
 
@@ -858,6 +1092,12 @@ async function getMasterAnalysis(
       !history ||
       history.success !== true
     ) {
+      const shariahRun =
+        await shariahRunPromise;
+
+      const shariah =
+        shariahRun.result;
+
       const performance = {
         totalMs:
           Date.now() -
@@ -880,6 +1120,9 @@ async function getMasterAnalysis(
         confluenceMs: 0,
 
         analysisMs: 0,
+
+        shariahMs:
+          shariahRun.durationMs,
 
         cacheHit: false
       };
@@ -905,6 +1148,8 @@ async function getMasterAnalysis(
           market,
 
           history,
+
+          shariah,
 
           refactorStatus:
             buildRefactorStatus()
@@ -1042,6 +1287,12 @@ async function getMasterAnalysis(
       failedIndicators.length >
       0
     ) {
+      const shariahRun =
+        await shariahRunPromise;
+
+      const shariah =
+        shariahRun.result;
+
       const performance = {
         totalMs:
           Date.now() -
@@ -1065,6 +1316,9 @@ async function getMasterAnalysis(
         confluenceMs: 0,
 
         analysisMs: 0,
+
+        shariahMs:
+          shariahRun.durationMs,
 
         cacheHit:
           history?.performance
@@ -1094,7 +1348,8 @@ async function getMasterAnalysis(
             supportResistance:
               null,
             fibonacci:
-              null
+              null,
+            shariah
           }),
 
         performance,
@@ -1107,6 +1362,8 @@ async function getMasterAnalysis(
           sharedHistory,
 
           indicators,
+
+          shariah,
 
           refactorStatus:
             buildRefactorStatus()
@@ -1304,6 +1561,16 @@ async function getMasterAnalysis(
     const confluence =
       confluenceRun.result;
 
+    // ==============================================
+    // Shariah Compliance Result
+    // ==============================================
+
+    const shariahRun =
+      await shariahRunPromise;
+
+    const shariah =
+      shariahRun.result;
+
     const dataQuality =
       buildDataQuality({
         market,
@@ -1311,7 +1578,8 @@ async function getMasterAnalysis(
         indicators,
         failedIndicators,
         supportResistance,
-        fibonacci
+        fibonacci,
+        shariah
       });
 
     // ==============================================
@@ -1389,7 +1657,9 @@ async function getMasterAnalysis(
 
       trend,
 
-      agreement
+      agreement,
+
+      shariah
     };
 
     const explanation =
@@ -1442,6 +1712,9 @@ async function getMasterAnalysis(
       analysisMs:
         analysisDurationMs,
 
+      shariahMs:
+        shariahRun.durationMs,
+
       cacheHit:
         history?.performance
           ?.cacheHit === true,
@@ -1465,7 +1738,10 @@ async function getMasterAnalysis(
             structureDurationMs,
 
           analysisMs:
-            analysisDurationMs
+            analysisDurationMs,
+
+          shariahMs:
+            shariahRun.durationMs
         })
     };
 
@@ -1513,6 +1789,8 @@ async function getMasterAnalysis(
         explanation,
 
         risk,
+
+        shariah,
 
         refactorStatus:
           buildRefactorStatus()
