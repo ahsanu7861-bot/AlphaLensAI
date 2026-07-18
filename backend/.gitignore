@@ -3,3 +3,6 @@
 node_modules/
 .DS_Store
 npm-debug.log*
+phase45-backup-*/
+phase*-source.txt
+tests/inspect*.js
