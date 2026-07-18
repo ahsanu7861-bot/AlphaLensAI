@@ -30,6 +30,12 @@ const {
 );
 
 const {
+  analyzeConfluence
+} = require(
+  "../analysis/confluence/confluenceEngine"
+);
+
+const {
   analyzeTrend
 } = require(
   "../analysis/trend/trendEngine"
@@ -268,7 +274,8 @@ function buildRefactorStatus() {
       "Volume Spike",
       "Candlestick",
       "Support & Resistance",
-      "Fibonacci"
+      "Fibonacci",
+      "Confluence"
     ],
 
     pendingSharedOHLCVConsumers: []
@@ -870,6 +877,8 @@ async function getMasterAnalysis(
 
         fibonacciMs: 0,
 
+        confluenceMs: 0,
+
         analysisMs: 0,
 
         cacheHit: false
@@ -1052,6 +1061,8 @@ async function getMasterAnalysis(
         supportResistanceMs: 0,
 
         fibonacciMs: 0,
+
+        confluenceMs: 0,
 
         analysisMs: 0,
 
@@ -1245,6 +1256,54 @@ async function getMasterAnalysis(
       }
     };
 
+    // ==============================================
+    // Confluence Analysis
+    // ==============================================
+
+    const confluenceRun =
+      runStructureEngine({
+        requestId,
+
+        name:
+          "Confluence",
+
+        symbol:
+          normalizedSymbol,
+
+        analysisFunction:
+          analyzeConfluence,
+
+        input: {
+          symbol:
+            normalizedSymbol,
+
+          currentPrice:
+            priceContext
+              .analysisPrice,
+
+          marketStructure,
+
+          indicators,
+
+          options: {
+            clusterThresholdPercent:
+              1,
+
+            maximumZones:
+              10,
+
+            minimumConfluenceScore:
+              15,
+
+            proximityThresholdPercent:
+              2
+          }
+        }
+      });
+
+    const confluence =
+      confluenceRun.result;
+
     const dataQuality =
       buildDataQuality({
         market,
@@ -1326,6 +1385,8 @@ async function getMasterAnalysis(
 
       fibonacci,
 
+      confluence,
+
       trend,
 
       agreement
@@ -1372,6 +1433,10 @@ async function getMasterAnalysis(
 
       fibonacciMs:
         fibonacciRun
+          .durationMs,
+
+      confluenceMs:
+        confluenceRun
           .durationMs,
 
       analysisMs:
@@ -1438,6 +1503,8 @@ async function getMasterAnalysis(
         indicators,
 
         marketStructure,
+
+        confluence,
 
         trend,
 
