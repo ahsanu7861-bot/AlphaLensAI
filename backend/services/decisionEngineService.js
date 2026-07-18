@@ -526,15 +526,98 @@ function buildRisk(master, levels, warnings) {
 
 function buildShariah(master) {
   const shariah = master?.data?.shariah || {};
+  const summary = shariah?.summary || {};
+  const company = shariah?.company || {};
+  const provider = shariah?.provider || null;
+
+  const methodologiesPassed =
+    summary?.methodologiesPassed ??
+    null;
+
+  const methodologiesFailed =
+    summary?.methodologiesFailed ??
+    null;
+
+  const methodologiesUnknown =
+    summary?.methodologiesUnknown ??
+    null;
+
+  const methodologiesTotal =
+    summary?.methodologiesTotal ??
+    null;
+
   return {
-    status: shariah?.status || "UNKNOWN",
-    confidence: shariah?.confidence || "UNKNOWN",
-    provider: shariah?.provider || null,
-    headline: shariah?.headline || null,
+    status:
+      summary?.status ??
+      shariah?.status ??
+      "UNKNOWN",
+
+    confidence:
+      summary?.confidence ??
+      shariah?.confidence ??
+      "UNKNOWN",
+
+    provider,
+
+    headline:
+      summary?.headline ??
+      shariah?.headline ??
+      null,
+
+    explanation:
+      summary?.explanation ??
+      shariah?.explanation ??
+      null,
+
     purificationRate:
+      summary?.purificationRateFormatted ??
+      summary?.purificationRatePercent ??
       shariah?.purificationRateFormatted ??
       shariah?.purificationRate ??
       null,
+
+    purificationRatePercent:
+      summary?.purificationRatePercent ??
+      null,
+
+    company: {
+      name: company?.name ?? null,
+      sector: company?.sector ?? null,
+      industry: company?.industry ?? null,
+      country: company?.country ?? null,
+      assetType: company?.assetType ?? null
+    },
+
+    methodologies: {
+      passed: methodologiesPassed,
+      failed: methodologiesFailed,
+      unknown: methodologiesUnknown,
+      total: methodologiesTotal
+    },
+
+    businessActivity: shariah?.businessActivity
+      ? {
+          status: shariah.businessActivity.status ?? null,
+          passed: shariah.businessActivity.passed ?? null,
+          reason: shariah.businessActivity.reason ?? null
+        }
+      : null,
+
+    financialScreen: shariah?.financialScreen
+      ? {
+          status: shariah.financialScreen.status ?? null,
+          passed: shariah.financialScreen.passed ?? null
+        }
+      : null,
+
+    verification: shariah?.verification
+      ? {
+          lastCheckedAt: shariah.verification.lastCheckedAt ?? null,
+          isStale: shariah.verification.isStale ?? null,
+          dataQuality: shariah.verification.dataQuality ?? null
+        }
+      : null,
+
     note:
       "Shariah status is reported from the screening provider and is not a religious ruling by AlphaLens AI."
   };

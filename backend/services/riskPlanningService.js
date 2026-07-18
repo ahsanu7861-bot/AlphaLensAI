@@ -21,8 +21,39 @@ function round(value, decimals = 2) {
   return Math.round((value + Number.EPSILON) * factor) / factor;
 }
 
+function normalizeMarketDirection(value) {
+  const direction = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replaceAll("-", "_")
+    .replaceAll(" ", "_");
+
+  if (
+    direction === DIRECTION.LONG ||
+    direction === "BULLISH" ||
+    direction === "STRONGLY_BULLISH"
+  ) {
+    return DIRECTION.LONG;
+  }
+
+  if (
+    direction === DIRECTION.SHORT ||
+    direction === "BEARISH" ||
+    direction === "STRONGLY_BEARISH"
+  ) {
+    return DIRECTION.SHORT;
+  }
+
+  if (direction === "NEUTRAL") {
+    return "NEUTRAL";
+  }
+
+  return null;
+}
+
 function normalizeDirection(value) {
-  const direction = String(value || "").trim().toUpperCase();
+  const direction = normalizeMarketDirection(value);
+
   return direction === DIRECTION.LONG || direction === DIRECTION.SHORT
     ? direction
     : null;
@@ -256,10 +287,17 @@ function calculateRiskPlan(input = {}, context = {}) {
   }
 
   const inheritedBias = context.marketBias
-    ? String(context.marketBias).toUpperCase()
+    ? String(context.marketBias).trim().toUpperCase()
     : null;
 
-  if (inheritedBias && inheritedBias !== direction) {
+  const normalizedInheritedBias =
+    normalizeMarketDirection(inheritedBias);
+
+  if (
+    normalizedInheritedBias &&
+    normalizedInheritedBias !== "NEUTRAL" &&
+    normalizedInheritedBias !== direction
+  ) {
     warnings.push(
       `The supplied direction (${direction}) differs from the inherited market bias (${inheritedBias}).`
     );
