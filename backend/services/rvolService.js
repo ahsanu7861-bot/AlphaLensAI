@@ -71,7 +71,7 @@ async function getRVOL(
 
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -93,7 +93,7 @@ async function getRVOL(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -114,7 +114,7 @@ async function getRVOL(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -151,7 +151,7 @@ async function getRVOL(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -212,7 +212,7 @@ async function getRVOL(
 
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       symbol:
         normalizedSymbol,

@@ -82,7 +82,7 @@ async function getATR(
         success: false,
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           history?.error ||
@@ -105,7 +105,7 @@ async function getATR(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Insufficient historical OHLC data to calculate ATR."
@@ -120,7 +120,7 @@ async function getATR(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Historical high, low and close arrays have inconsistent lengths."
@@ -141,7 +141,7 @@ async function getATR(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error: "Unable to calculate ATR."
       };
@@ -156,7 +156,7 @@ async function getATR(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "ATR calculation returned an invalid value."
@@ -175,7 +175,7 @@ async function getATR(
       success: true,
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
       symbol: normalizedSymbol,
 
       atr: Number(latestATR.toFixed(2)),

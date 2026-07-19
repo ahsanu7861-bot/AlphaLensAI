@@ -93,7 +93,7 @@ async function getOBV(
 
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -118,7 +118,7 @@ async function getOBV(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -137,7 +137,7 @@ async function getOBV(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -162,7 +162,7 @@ async function getOBV(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -199,7 +199,7 @@ async function getOBV(
 
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -245,7 +245,7 @@ async function getOBV(
 
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       symbol:
         normalizedSymbol,

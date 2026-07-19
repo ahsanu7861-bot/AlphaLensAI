@@ -45,7 +45,7 @@ async function getTrend(symbol) {
 
     return {
       success: true,
-      provider: ema.provider || "AlphaVantage",
+      provider: ema.provider || "TwelveData",
       symbol: symbol.toUpperCase(),
       ...trendAnalysis
     };

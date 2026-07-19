@@ -59,7 +59,7 @@ async function getMACD(symbol, sharedHistory = null) {
         success: false,
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           history?.error ||
@@ -74,7 +74,7 @@ async function getMACD(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Insufficient historical closing prices to calculate MACD."
@@ -92,7 +92,7 @@ async function getMACD(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error: "Unable to calculate MACD."
       };
@@ -116,7 +116,7 @@ async function getMACD(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "MACD calculation returned invalid values."
@@ -135,7 +135,7 @@ async function getMACD(symbol, sharedHistory = null) {
       success: true,
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
       symbol: normalizedSymbol,
       macd: Number(macdValue.toFixed(4)),
       signalLine: Number(

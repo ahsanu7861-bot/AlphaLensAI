@@ -158,7 +158,7 @@ function buildSharedHistorySummary(
 
     provider:
       history?.provider ||
-      "AlphaVantage",
+      "TwelveData",
 
     symbol:
       normalizedSymbol,
@@ -613,7 +613,7 @@ function buildDataQuality({
 
       historical:
         history?.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       structure:
         "AlphaLens AI",
@@ -1602,7 +1602,7 @@ async function getMasterAnalysis(
 
       provider:
         ema.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       symbol:
         normalizedSymbol,
@@ -1620,7 +1620,7 @@ async function getMasterAnalysis(
 
       provider:
         ema.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       symbol:
         normalizedSymbol,

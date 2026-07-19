@@ -59,7 +59,7 @@ async function getEMA(symbol, sharedHistory = null) {
         success: false,
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           history?.error ||
@@ -74,7 +74,7 @@ async function getEMA(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Insufficient historical closing prices to calculate EMA20."
@@ -94,7 +94,7 @@ async function getEMA(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error: "Unable to calculate EMA20."
       };
@@ -114,7 +114,7 @@ async function getEMA(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "EMA calculation returned an invalid value."
@@ -133,7 +133,7 @@ async function getEMA(symbol, sharedHistory = null) {
       success: true,
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
       symbol: normalizedSymbol,
       ema20: Number(latestEMA.toFixed(2)),
       currentPrice: Number(latestPrice.toFixed(2)),

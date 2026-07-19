@@ -57,7 +57,7 @@ async function getVolumeSpike(
 
         provider:
           rvolResult?.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -79,7 +79,7 @@ async function getVolumeSpike(
 
         provider:
           rvolResult.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -94,7 +94,7 @@ async function getVolumeSpike(
 
       provider:
         rvolResult.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       symbol:
         normalizedSymbol,

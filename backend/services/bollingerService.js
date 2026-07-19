@@ -60,7 +60,7 @@ async function getBollinger(
         success: false,
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           history?.error ||
@@ -76,7 +76,7 @@ async function getBollinger(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Insufficient historical closing prices to calculate Bollinger Bands."
@@ -94,7 +94,7 @@ async function getBollinger(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Unable to calculate Bollinger Bands."
@@ -122,7 +122,7 @@ async function getBollinger(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Bollinger Bands calculation returned invalid values."
@@ -145,7 +145,7 @@ async function getBollinger(
       success: true,
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
       symbol: normalizedSymbol,
 
       upperBand: Number(upper.toFixed(2)),

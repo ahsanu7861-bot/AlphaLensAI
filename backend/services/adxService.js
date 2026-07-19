@@ -82,7 +82,7 @@ async function getADX(
         success: false,
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           history?.error ||
@@ -105,7 +105,7 @@ async function getADX(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Insufficient historical OHLC data to calculate ADX."
@@ -120,7 +120,7 @@ async function getADX(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Historical high, low and close arrays have inconsistent lengths."
@@ -141,7 +141,7 @@ async function getADX(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error: "Unable to calculate ADX."
       };
@@ -163,7 +163,7 @@ async function getADX(
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "ADX calculation returned invalid values."
@@ -184,7 +184,7 @@ async function getADX(
       success: true,
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
       symbol: normalizedSymbol,
 
       adx: Number(adx.toFixed(2)),

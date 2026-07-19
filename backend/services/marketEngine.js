@@ -4,7 +4,7 @@ const {
 
 const {
   getHistoricalData
-} = require("../providers/alphaVantageProvider");
+} = require("../providers/twelveDataProvider");
 
 const {
   getCache,
@@ -553,7 +553,7 @@ async function getHistory(symbol) {
   if (!normalizedSymbol) {
     return {
       success: false,
-      provider: "AlphaVantage",
+      provider: "TwelveData",
       symbol: normalizedSymbol,
 
       error:
@@ -591,7 +591,7 @@ async function getHistory(symbol) {
       if (bars.length === 0) {
         return {
           success: false,
-          provider: "AlphaVantage",
+          provider: "TwelveData",
           symbol: normalizedSymbol,
 
           error:
@@ -615,7 +615,7 @@ async function getHistory(symbol) {
 
         provider:
           cachedResult.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol: normalizedSymbol,
 
@@ -645,7 +645,7 @@ async function getHistory(symbol) {
     }
 
     // ==============================================
-    // Alpha Vantage Fetch
+    // Twelve Data Fetch
     // ==============================================
 
     const result =
@@ -659,7 +659,7 @@ async function getHistory(symbol) {
 
         provider:
           result?.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -692,7 +692,7 @@ async function getHistory(symbol) {
 
         provider:
           result.provider ||
-          "AlphaVantage",
+          "TwelveData",
 
         symbol:
           normalizedSymbol,
@@ -718,7 +718,7 @@ async function getHistory(symbol) {
 
       provider:
         result.provider ||
-        "AlphaVantage",
+        "TwelveData",
 
       symbol:
         normalizedSymbol,
@@ -764,7 +764,7 @@ async function getHistory(symbol) {
 
     return {
       success: false,
-      provider: "AlphaVantage",
+      provider: "TwelveData",
       symbol: normalizedSymbol,
 
       error:

@@ -64,7 +64,7 @@ async function getRSI(symbol, sharedHistory = null) {
         success: false,
         provider:
           history?.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           history?.error ||
@@ -79,7 +79,7 @@ async function getRSI(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "Insufficient historical closing prices to calculate RSI."
@@ -96,7 +96,7 @@ async function getRSI(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error: "Unable to calculate RSI."
       };
@@ -110,7 +110,7 @@ async function getRSI(symbol, sharedHistory = null) {
         success: false,
         provider:
           history.provider ||
-          "AlphaVantage",
+          "TwelveData",
         symbol: normalizedSymbol,
         error:
           "RSI calculation returned an invalid value."
@@ -129,7 +129,7 @@ async function getRSI(symbol, sharedHistory = null) {
       success: true,
       provider:
         history.provider ||
-        "AlphaVantage",
+        "TwelveData",
       symbol: normalizedSymbol,
       rsi: Number(latestRSI.toFixed(2)),
       signal,
