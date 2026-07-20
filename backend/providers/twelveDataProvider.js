@@ -3,10 +3,38 @@ const axios = require("axios");
 const TWELVE_DATA_URL =
   "https://api.twelvedata.com/time_series";
 
+const SUPPORTED_INTERVALS = new Set([
+  "1min",
+  "5min",
+  "15min",
+  "30min",
+  "45min",
+  "1h",
+  "2h",
+  "4h",
+  "8h",
+  "1day",
+  "1week",
+  "1month"
+]);
+
 function normalizeSymbol(symbol) {
   return String(symbol || "")
     .trim()
     .toUpperCase();
+}
+
+function normalizeInterval(interval) {
+  const normalizedInterval =
+    String(interval || "1day")
+      .trim()
+      .toLowerCase();
+
+  return SUPPORTED_INTERVALS.has(
+    normalizedInterval
+  )
+    ? normalizedInterval
+    : null;
 }
 
 function getProviderError(data) {
@@ -15,7 +43,10 @@ function getProviderError(data) {
   }
 
   if (data.status === "error") {
-    return data.message || "Twelve Data returned an error.";
+    return (
+      data.message ||
+      "Twelve Data returned an error."
+    );
   }
 
   if (data.code && data.message) {
@@ -25,9 +56,15 @@ function getProviderError(data) {
   return null;
 }
 
-async function getHistoricalData(symbol) {
+async function getHistoricalData(
+  symbol,
+  interval = "1day"
+) {
   const normalizedSymbol =
     normalizeSymbol(symbol);
+
+  const normalizedInterval =
+    normalizeInterval(interval);
 
   const API_KEY =
     process.env.TWELVE_DATA_API_KEY;
@@ -37,8 +74,24 @@ async function getHistoricalData(symbol) {
       success: false,
       provider: "TwelveData",
       symbol: normalizedSymbol,
-      error: "A valid ticker symbol is required.",
+      interval,
+      error:
+        "A valid ticker symbol is required.",
       code: "INVALID_SYMBOL"
+    };
+  }
+
+  if (!normalizedInterval) {
+    return {
+      success: false,
+      provider: "TwelveData",
+      symbol: normalizedSymbol,
+      interval,
+      error:
+        "Unsupported historical interval.",
+      code: "INVALID_INTERVAL",
+      supportedIntervals:
+        Array.from(SUPPORTED_INTERVALS)
     };
   }
 
@@ -47,9 +100,11 @@ async function getHistoricalData(symbol) {
       success: false,
       provider: "TwelveData",
       symbol: normalizedSymbol,
+      interval: normalizedInterval,
       error:
         "Twelve Data API key is not configured.",
-      code: "TWELVE_DATA_API_KEY_MISSING"
+      code:
+        "TWELVE_DATA_API_KEY_MISSING"
     };
   }
 
@@ -59,13 +114,14 @@ async function getHistoricalData(symbol) {
       {
         params: {
           symbol: normalizedSymbol,
-          interval: "1day",
+          interval: normalizedInterval,
           outputsize: 100,
           order: "asc",
           format: "JSON"
         },
         headers: {
-          Authorization: `apikey ${API_KEY}`
+          Authorization:
+            `apikey ${API_KEY}`
         },
         timeout: 15000
       }
@@ -78,7 +134,7 @@ async function getHistoricalData(symbol) {
 
     if (providerError) {
       console.error(
-        `[TwelveData] ${normalizedSymbol}:`,
+        `[TwelveData] ${normalizedSymbol} ${normalizedInterval}:`,
         providerError
       );
 
@@ -86,6 +142,7 @@ async function getHistoricalData(symbol) {
         success: false,
         provider: "TwelveData",
         symbol: normalizedSymbol,
+        interval: normalizedInterval,
         error: providerError,
         code:
           data?.code === 429
@@ -104,9 +161,11 @@ async function getHistoricalData(symbol) {
         success: false,
         provider: "TwelveData",
         symbol: normalizedSymbol,
+        interval: normalizedInterval,
         error:
           "Twelve Data returned no historical OHLCV values.",
-        code: "TWELVE_DATA_EMPTY_SERIES"
+        code:
+          "TWELVE_DATA_EMPTY_SERIES"
       };
     }
 
@@ -164,9 +223,11 @@ async function getHistoricalData(symbol) {
         success: false,
         provider: "TwelveData",
         symbol: normalizedSymbol,
+        interval: normalizedInterval,
         error:
           "Twelve Data response contained no valid OHLCV bars.",
-        code: "TWELVE_DATA_INVALID_BARS"
+        code:
+          "TWELVE_DATA_INVALID_BARS"
       };
     }
 
@@ -174,6 +235,7 @@ async function getHistoricalData(symbol) {
       success: true,
       provider: "TwelveData",
       symbol: normalizedSymbol,
+      interval: normalizedInterval,
       data: {
         t: bars.map(
           (bar) => bar.date
@@ -201,14 +263,16 @@ async function getHistoricalData(symbol) {
         currency:
           data?.meta?.currency || null,
         interval:
-          data?.meta?.interval || "1day",
+          data?.meta?.interval ||
+          normalizedInterval,
         barCount:
           bars.length,
         oldestDate:
           bars[0]?.date || null,
         latestDate:
-          bars[bars.length - 1]?.date ||
-          null
+          bars[
+            bars.length - 1
+          ]?.date || null
       }
     };
   } catch (error) {
@@ -216,7 +280,7 @@ async function getHistoricalData(symbol) {
       error.response?.data;
 
     console.error(
-      `[TwelveData] Request failed for ${normalizedSymbol}:`,
+      `[TwelveData] Request failed for ${normalizedSymbol} ${normalizedInterval}:`,
       responseData || error.message
     );
 
@@ -224,6 +288,7 @@ async function getHistoricalData(symbol) {
       success: false,
       provider: "TwelveData",
       symbol: normalizedSymbol,
+      interval: normalizedInterval,
       error:
         responseData?.message ||
         error.message ||
@@ -239,5 +304,7 @@ async function getHistoricalData(symbol) {
 }
 
 module.exports = {
-  getHistoricalData
+  getHistoricalData,
+  normalizeInterval,
+  SUPPORTED_INTERVALS
 };

@@ -31,9 +31,16 @@ const {
 const {
   getExplanation
 } = require("./services/explanationService");
+// ============================
+// Routes
+// ============================
+
+const watchlistRoutes = require("./routes/watchlistRoutes");
+const portfolioRoutes = require("./routes/portfolioRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 
 // ============================
 // Middleware
@@ -44,6 +51,11 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
 
+// ============================
+// API Routes
+// ============================
+app.use("/api/watchlist", watchlistRoutes);
+app.use("/api/portfolio", portfolioRoutes);
 // ============================
 // Home
 // ============================
@@ -113,7 +125,14 @@ app.get("/history/:symbol", async (req, res) => {
       .trim()
       .toUpperCase();
 
-    const result = await getHistory(symbol);
+    const interval =
+      req.query.interval || "1day";
+
+    const result =
+      await getHistory(
+        symbol,
+        interval
+      );
 
     res.json(result);
   } catch (error) {

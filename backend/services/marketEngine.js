@@ -21,6 +21,34 @@ function normalizeSymbol(symbol) {
     .toUpperCase();
 }
 
+const SUPPORTED_INTERVALS = new Set([
+  "1min",
+  "5min",
+  "15min",
+  "30min",
+  "45min",
+  "1h",
+  "2h",
+  "4h",
+  "8h",
+  "1day",
+  "1week",
+  "1month"
+]);
+
+function normalizeInterval(interval) {
+  const normalizedInterval =
+    String(interval || "1day")
+      .trim()
+      .toLowerCase();
+
+  return SUPPORTED_INTERVALS.has(
+    normalizedInterval
+  )
+    ? normalizedInterval
+    : null;
+}
+
 function toNumber(value, fallback = null) {
   const number = Number(value);
 
@@ -544,9 +572,15 @@ async function getMarketData(symbol) {
 // Historical Data — Shared OHLCV
 // ==================================================
 
-async function getHistory(symbol) {
+async function getHistory(
+  symbol,
+  interval = "1day"
+) {
   const normalizedSymbol =
     normalizeSymbol(symbol);
+
+  const normalizedInterval =
+    normalizeInterval(interval);
 
   const startedAt = Date.now();
 
@@ -555,9 +589,39 @@ async function getHistory(symbol) {
       success: false,
       provider: "TwelveData",
       symbol: normalizedSymbol,
+      interval,
 
       error:
         "A valid ticker symbol is required.",
+
+      code:
+        "INVALID_SYMBOL",
+
+      performance: {
+        durationMs:
+          Date.now() -
+          startedAt,
+
+        cacheHit: false
+      }
+    };
+  }
+
+  if (!normalizedInterval) {
+    return {
+      success: false,
+      provider: "TwelveData",
+      symbol: normalizedSymbol,
+      interval,
+
+      error:
+        "Unsupported historical interval.",
+
+      code:
+        "INVALID_INTERVAL",
+
+      supportedIntervals:
+        Array.from(SUPPORTED_INTERVALS),
 
       performance: {
         durationMs:
@@ -570,7 +634,7 @@ async function getHistory(symbol) {
   }
 
   const cacheKey =
-    `history_${normalizedSymbol}`;
+    `history_${normalizedSymbol}_${normalizedInterval}`;
 
   try {
     // ==============================================
@@ -593,9 +657,14 @@ async function getHistory(symbol) {
           success: false,
           provider: "TwelveData",
           symbol: normalizedSymbol,
+          interval:
+            normalizedInterval,
 
           error:
             "Cached historical data could not be normalized.",
+
+          code:
+            "INVALID_CACHED_HISTORY",
 
           performance: {
             durationMs:
@@ -619,12 +688,29 @@ async function getHistory(symbol) {
 
         symbol: normalizedSymbol,
 
+        interval:
+          normalizedInterval,
+
         // Existing services can use data.c,
         // data.o, data.h, data.l and data.v.
         data,
 
         // Shared-OHLCV services use bars.
         bars,
+
+        metadata:
+          cachedResult.metadata || {
+            interval:
+              normalizedInterval,
+            barCount:
+              bars.length,
+            oldestDate:
+              bars[0]?.date || null,
+            latestDate:
+              bars[
+                bars.length - 1
+              ]?.date || null
+          },
 
         cache: "HIT",
 
@@ -650,7 +736,8 @@ async function getHistory(symbol) {
 
     const result =
       await getHistoricalData(
-        normalizedSymbol
+        normalizedSymbol,
+        normalizedInterval
       );
 
     if (result?.success !== true) {
@@ -664,9 +751,19 @@ async function getHistory(symbol) {
         symbol:
           normalizedSymbol,
 
+        interval:
+          normalizedInterval,
+
+        code:
+          result?.code ||
+          "HISTORICAL_DATA_ERROR",
+
         error:
           result?.error ||
           "Unable to fetch historical market data.",
+
+        supportedIntervals:
+          result?.supportedIntervals,
 
         performance: {
           durationMs:
@@ -697,8 +794,14 @@ async function getHistory(symbol) {
         symbol:
           normalizedSymbol,
 
+        interval:
+          normalizedInterval,
+
         error:
           "Historical data was returned, but no valid OHLCV bars could be normalized.",
+
+        code:
+          "INVALID_HISTORICAL_BARS",
 
         performance: {
           durationMs:
@@ -723,11 +826,28 @@ async function getHistory(symbol) {
       symbol:
         normalizedSymbol,
 
+      interval:
+        normalizedInterval,
+
       // Legacy structure
       data,
 
       // Shared OHLCV structure
-      bars
+      bars,
+
+      metadata:
+        result.metadata || {
+          interval:
+            normalizedInterval,
+          barCount:
+            bars.length,
+          oldestDate:
+            bars[0]?.date || null,
+          latestDate:
+            bars[
+              bars.length - 1
+            ]?.date || null
+        }
     };
 
     // Existing cache utility uses minutes.
@@ -767,11 +887,17 @@ async function getHistory(symbol) {
       provider: "TwelveData",
       symbol: normalizedSymbol,
 
+      interval:
+        normalizedInterval,
+
       error:
         "Unable to fetch historical market data.",
 
       details:
         error.message,
+
+      code:
+        "HISTORICAL_DATA_EXCEPTION",
 
       performance: {
         durationMs:
@@ -788,5 +914,7 @@ module.exports = {
   getMarketData,
   getHistory,
   normalizeHistoricalBars,
-  buildColumnData
+  buildColumnData,
+  normalizeInterval,
+  SUPPORTED_INTERVALS
 };
