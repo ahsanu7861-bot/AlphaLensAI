@@ -1,5 +1,5 @@
 // ==================================================
-// AlphaLens AI
+// AzaLens
 // Fibonacci Retracement Engine
 // ==================================================
 
@@ -1061,7 +1061,7 @@ function analyzeFibonacci({
         false,
 
       provider:
-        "AlphaLens AI",
+        "AzaLens",
 
       symbol:
         normalizedSymbol,
@@ -1129,7 +1129,7 @@ function analyzeFibonacci({
         false,
 
       provider:
-        "AlphaLens AI",
+        "AzaLens",
 
       symbol:
         normalizedSymbol,
@@ -1161,7 +1161,7 @@ function analyzeFibonacci({
         false,
 
       provider:
-        "AlphaLens AI",
+        "AzaLens",
 
       symbol:
         normalizedSymbol,
@@ -1237,7 +1237,7 @@ function analyzeFibonacci({
       true,
 
     provider:
-      "AlphaLens AI",
+      "AzaLens",
 
     symbol:
       normalizedSymbol,

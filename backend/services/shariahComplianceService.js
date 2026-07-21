@@ -3,7 +3,7 @@ const {
 } = require("../providers/halalTerminalProvider");
 
 // ============================================================
-// AlphaLens AI - Shariah Compliance Service
+// AzaLens - Shariah Compliance Service
 // Version: 0.4.1
 // ============================================================
 
@@ -325,10 +325,10 @@ function buildDisclaimers(providerResult) {
   ) {
     return [
       {
-        id: "alphalens-shariah",
+        id: "AzaLens-shariah",
         severity: "religious",
         text:
-          "AlphaLens AI reports automated screening data and does not issue a fatwa or scholarly attestation.",
+          "AzaLens reports automated screening data and does not issue a fatwa or scholarly attestation.",
         url: null,
       },
     ];

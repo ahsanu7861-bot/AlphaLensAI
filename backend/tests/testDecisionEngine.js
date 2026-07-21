@@ -1,5 +1,5 @@
 /**
- * AlphaLens AI — Phase 4A Decision Engine Test
+ * AzaLens — Phase 4A Decision Engine Test
  *
  * Run:
  *   node tests/testDecisionEngine.js AAPL

@@ -1,5 +1,5 @@
 /**
- * AlphaLens AI — Phase 4B Scenario & Trade-Planning Engine
+ * AzaLens — Phase 4B Scenario & Trade-Planning Engine
  *
  * Purpose:
  * - Convert a Phase 4A Decision Report into conditional market scenarios.
@@ -10,7 +10,7 @@
 
 "use strict";
 
-const PROVIDER = "AlphaLens AI";
+const PROVIDER = "AzaLens";
 const ENGINE_VERSION = "1.0.0";
 
 const SCENARIO_TYPE = Object.freeze({
@@ -308,7 +308,7 @@ function buildRiskPlan(decision, levels) {
     rewardToRisk: {
       available: false,
       reason:
-        "AlphaLens does not infer an entry price. A valid entry and invalidation level are required for this calculation."
+        "AzaLens does not infer an entry price. A valid entry and invalidation level are required for this calculation."
     },
     controls: unique(controls),
     inheritedWarnings: warnings
@@ -386,7 +386,7 @@ function createScenarioPlan(input) {
       status: "UNKNOWN",
       confidence: "UNKNOWN",
       note:
-        "Shariah status is reported from the screening provider and is not a religious ruling by AlphaLens AI."
+        "Shariah status is reported from the screening provider and is not a religious ruling by AzaLens."
     },
     disclaimer:
       "This plan presents conditional research scenarios only. It is not a buy or sell instruction, personalized investment advice, a price prediction, or a guarantee of future results."

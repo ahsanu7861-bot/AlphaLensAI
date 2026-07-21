@@ -1,5 +1,5 @@
 /**
- * AlphaLens AI — Phase 4B Scenario & Trade-Planning Engine Test
+ * AzaLens — Phase 4B Scenario & Trade-Planning Engine Test
  *
  * Run:
  *   node tests/testScenarioPlanning.js AAPL

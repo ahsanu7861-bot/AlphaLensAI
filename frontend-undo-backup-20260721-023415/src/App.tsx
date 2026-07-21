@@ -56,7 +56,7 @@ function App() {
           </div>
 
           <div className="ml-3">
-            <p className="text-lg font-semibold tracking-tight">AlphaLens</p>
+            <p className="text-lg font-semibold tracking-tight">AzaLens</p>
             <p className="text-xs text-slate-500">AI Market Intelligence</p>
           </div>
         </div>
@@ -80,7 +80,7 @@ function App() {
 
         <div className="m-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
           <p className="text-sm font-medium text-emerald-400">
-            AlphaLens Intelligence
+            AzaLens Intelligence
           </p>
           <p className="mt-2 text-xs leading-5 text-slate-400">
             Understand the market before making your next decision.
@@ -149,7 +149,7 @@ function App() {
             <div className="mb-4">
               <h3 className="text-lg font-semibold">AAPL Intelligence Snapshot</h3>
               <p className="mt-1 text-sm text-slate-500">
-                Latest AlphaLens technical assessment
+                Latest AzaLens technical assessment
               </p>
             </div>
 

@@ -272,13 +272,13 @@ function calculateRiskPlan(input = {}, context = {}) {
 
   if (accountExposurePct > 100) {
     warnings.push(
-      "The calculated position requires more capital than the account size. AlphaLens does not assume leverage."
+      "The calculated position requires more capital than the account size. AzaLens does not assume leverage."
     );
   }
 
   if (riskPercent > 5) {
     warnings.push(
-      "The supplied risk percentage is above 5%. AlphaLens reports this input but does not endorse it."
+      "The supplied risk percentage is above 5%. AzaLens reports this input but does not endorse it."
     );
   }
 
@@ -355,7 +355,7 @@ function calculateRiskPlan(input = {}, context = {}) {
       "This output is a calculation aid, not a buy or sell instruction."
     ],
     disclaimer:
-      "AlphaLens AI performs deterministic calculations from user-supplied values and does not provide investment, financial, legal, or religious advice.",
+      "AzaLens performs deterministic calculations from user-supplied values and does not provide investment, financial, legal, or religious advice.",
     performance: { durationMs: Date.now() - startedAt }
   };
 }

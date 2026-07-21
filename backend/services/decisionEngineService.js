@@ -1,5 +1,5 @@
 /**
- * AlphaLens AI — Phase 4A Decision Engine
+ * AzaLens — Phase 4A Decision Engine
  *
  * Purpose:
  * - Convert an existing Master Analysis response into one clear,
@@ -11,7 +11,7 @@
 
 "use strict";
 
-const PROVIDER = "AlphaLens AI";
+const PROVIDER = "AzaLens";
 const ENGINE_VERSION = "1.0.0";
 
 const BIAS = Object.freeze({
@@ -619,7 +619,7 @@ function buildShariah(master) {
       : null,
 
     note:
-      "Shariah status is reported from the screening provider and is not a religious ruling by AlphaLens AI."
+      "Shariah status is reported from the screening provider and is not a religious ruling by AzaLens."
   };
 }
 

@@ -5,7 +5,7 @@ const {
 } = require("../services/shariahComplianceService");
 
 // ============================================================
-// AlphaLens AI - Shariah Compliance Service Test
+// AzaLens - Shariah Compliance Service Test
 // Compact Console Output
 // ============================================================
 
@@ -13,7 +13,7 @@ async function run() {
   const symbol = process.argv[2] || "AAPL";
 
   console.log(
-    `\nTesting AlphaLens Shariah Compliance Service for ${symbol}...\n`
+    `\nTesting AzaLens Shariah Compliance Service for ${symbol}...\n`
   );
 
   const result = await getShariahCompliance(symbol);

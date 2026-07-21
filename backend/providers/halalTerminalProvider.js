@@ -2,7 +2,7 @@ const axios = require("axios");
 const { getCache, setCache } = require("../utils/cache");
 
 // ============================================================
-// AlphaLens AI - Halal Terminal Provider
+// AzaLens - Halal Terminal Provider
 // Version: 0.4.0
 // ============================================================
 

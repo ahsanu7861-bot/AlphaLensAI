@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 # ==================================================
-# AlphaLens AI — Automatic Three-Copy Backup
+# AzaLens — Automatic Three-Copy Backup
 # ==================================================
 #
 # Copies maintained:
@@ -17,18 +17,18 @@ set -Eeuo pipefail
 # sockets, logs and temporary files are not included.
 # ==================================================
 
-PROJECT_DIR="/Users/apple/AlphaLensAI"
+PROJECT_DIR="/Users/apple/AzaLensAI"
 
-BACKUP_ROOT="/Users/apple/Documents/AlphaLensAI Backups"
+BACKUP_ROOT="/Users/apple/Documents/AzaLensAI Backups"
 DAILY_DIR="$BACKUP_ROOT/Daily"
 MILESTONES_DIR="$BACKUP_ROOT/Milestones"
 RELEASES_DIR="$BACKUP_ROOT/Releases"
 
 LOG_DIR="/Users/apple/Library/Logs"
-LOG_FILE="$LOG_DIR/AlphaLensAI-backup.log"
+LOG_FILE="$LOG_DIR/AzaLensAI-backup.log"
 
 TIMESTAMP="$(date '+%Y-%m-%d_%H-%M-%S')"
-BACKUP_NAME="AlphaLensAI_Backup_${TIMESTAMP}.tar.gz"
+BACKUP_NAME="AzaLensAI_Backup_${TIMESTAMP}.tar.gz"
 BACKUP_PATH="$DAILY_DIR/$BACKUP_NAME"
 
 mkdir -p "$DAILY_DIR"
@@ -41,7 +41,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 echo ""
 echo "=================================================="
-echo "AlphaLens AI backup started"
+echo "AzaLens backup started"
 echo "Time: $(date)"
 echo "=================================================="
 
@@ -190,7 +190,7 @@ rm -f "$BACKUP_PATH"
 
 git archive \
     --format=tar.gz \
-    --prefix="AlphaLensAI/" \
+    --prefix="AzaLensAI/" \
     --output="$BACKUP_PATH" \
     HEAD
 

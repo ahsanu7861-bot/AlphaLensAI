@@ -1,5 +1,5 @@
 // ==================================================
-// AlphaLens AI
+// AzaLens
 // Market Confluence Engine
 // ==================================================
 
@@ -1459,7 +1459,7 @@ function analyzeConfluence({
         false,
 
       provider:
-        "AlphaLens AI",
+        "AzaLens",
 
       symbol:
         normalizedSymbol,
@@ -1612,7 +1612,7 @@ function analyzeConfluence({
       true,
 
     provider:
-      "AlphaLens AI",
+      "AzaLens",
 
     symbol:
       normalizedSymbol,

@@ -1,5 +1,5 @@
 // ==================================================
-// AlphaLens AI
+// AzaLens
 // Support & Resistance Service
 // ==================================================
 
@@ -1352,7 +1352,7 @@ function analyzeSupportResistance({
 
   return {
     success: true,
-    provider: "AlphaLens AI",
+    provider: "AzaLens",
     symbol: normalizedSymbol,
 
     currentPrice:

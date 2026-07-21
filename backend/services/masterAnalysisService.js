@@ -616,7 +616,7 @@ function buildDataQuality({
         "TwelveData",
 
       structure:
-        "AlphaLens AI",
+        "AzaLens",
 
       shariah:
         shariah?.provider?.name ||
@@ -829,7 +829,7 @@ function runStructureEngine({
         success: false,
 
         provider:
-          "AlphaLens AI",
+          "AzaLens",
 
         symbol,
 
@@ -959,13 +959,13 @@ async function runShariahCompliance({
         disclaimers: [
           {
             id:
-              "alphalens-shariah",
+              "AzaLens-shariah",
 
             severity:
               "religious",
 
             text:
-              "AlphaLens AI reports automated screening data and does not issue a fatwa or scholarly attestation.",
+              "AzaLens reports automated screening data and does not issue a fatwa or scholarly attestation.",
 
             url: null
           }
@@ -1493,7 +1493,7 @@ async function getMasterAnalysis(
         normalizedSymbol,
 
       provider:
-        "AlphaLens AI",
+        "AzaLens",
 
       supportResistance,
 
@@ -1635,7 +1635,7 @@ async function getMasterAnalysis(
         normalizedSymbol,
 
       provider:
-        "AlphaLens AI",
+        "AzaLens",
 
       generatedAt,
 

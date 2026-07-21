@@ -62,10 +62,10 @@ app.use("/api/portfolio", portfolioRoutes);
 
 app.get("/", (req, res) => {
   res.json({
-    project: "AlphaLens AI",
+    project: "AzaLens",
     version: "0.1.0",
     status: "Running",
-    message: "Welcome to AlphaLens AI 🚀"
+    message: "Welcome to AzaLens 🚀"
   });
 });
 
@@ -87,7 +87,7 @@ app.get("/health", (req, res) => {
 
 app.get("/version", (req, res) => {
   res.json({
-    project: "AlphaLens AI",
+    project: "AzaLens",
     version: "0.1.0"
   });
 });
@@ -513,6 +513,6 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(
-    `🚀 AlphaLens AI Backend running on port ${PORT}`
+    `🚀 AzaLens Backend running on port ${PORT}`
   );
 });

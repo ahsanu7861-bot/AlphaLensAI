@@ -4,7 +4,7 @@ export default function LiveAnalysisTest() {
   const { data, isLoading, error } = useAnalysis("AAPL");
 
   if (isLoading) {
-    return <div className="p-6">Loading AlphaLens AI...</div>;
+    return <div className="p-6">Loading AzaLens...</div>;
   }
 
   if (error) {

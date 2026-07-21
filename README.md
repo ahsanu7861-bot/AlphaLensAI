@@ -1,4 +1,4 @@
-# AlphaLens AI
+# AzaLens
 
 An AI-powered trading analysis platform built from scratch.
 
