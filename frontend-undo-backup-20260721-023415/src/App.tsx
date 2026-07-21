@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   Activity,
   BarChart3,
@@ -12,7 +11,6 @@ import {
   TrendingUp,
   WalletCards,
 } from 'lucide-react'
-import { useAnalysis } from './hooks/useAnalysis'
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, active: true },
@@ -49,24 +47,6 @@ const metrics = [
 ]
 
 function App() {
-  const [input, setInput] = useState('AAPL')
-  const [symbol, setSymbol] = useState('AAPL')
-
-  const { isLoading, error } = useAnalysis(symbol)
-
-  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const nextSymbol = input.trim().toUpperCase()
-
-    if (!nextSymbol) {
-      return
-    }
-
-    setInput(nextSymbol)
-    setSymbol(nextSymbol)
-  }
-
   return (
     <div className="min-h-screen bg-[#080b12] text-slate-100">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-white/10 bg-[#0b0f18] lg:flex lg:flex-col">
@@ -116,28 +96,14 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <form
-              onSubmit={handleSearch}
-              className="hidden items-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 md:flex"
+            <button
+              type="button"
+              className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-slate-400 md:flex"
             >
-              <Search size={16} className="shrink-0 text-slate-400" />
-
-              <input
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder="AAPL, TSLA, NVDA..."
-                aria-label="Stock ticker"
-                className="ml-2 w-44 bg-transparent text-sm text-white outline-none placeholder:text-slate-600"
-              />
-
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="ml-3 rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-black transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isLoading ? 'Loading...' : 'Go'}
-              </button>
-            </form>
+              <Search size={17} />
+              Search stocks
+              <span className="ml-12 text-xs text-slate-600">⌘ K</span>
+            </button>
 
             <button
               type="button"
@@ -171,11 +137,6 @@ function App() {
 
               <button
                 type="button"
-                onClick={() => {
-                  document.querySelector<HTMLInputElement>(
-                    'input[aria-label="Stock ticker"]',
-                  )?.focus()
-                }}
                 className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400"
               >
                 Analyze a stock
@@ -184,17 +145,9 @@ function App() {
             </div>
           </section>
 
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-              Unable to analyze “{symbol}”. Check the ticker and try again.
-            </div>
-          )}
-
           <section className="mt-8">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold">
-                {symbol} Intelligence Snapshot
-              </h3>
+              <h3 className="text-lg font-semibold">AAPL Intelligence Snapshot</h3>
               <p className="mt-1 text-sm text-slate-500">
                 Latest AlphaLens technical assessment
               </p>
