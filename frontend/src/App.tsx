@@ -38,20 +38,26 @@ const metrics = [
   },
   {
     label: 'Agreement',
-    value: '60%',
-    detail: 'Bullish alignment',
+    value: `${data?.agreement?.confidence ?? '--'}%`,
+    detail:
+      data?.agreement?.agreementSummary ??
+      'Loading...',
     icon: Activity,
   },
   {
     label: 'Technical Risk',
-    value: 'Moderate',
-    detail: '46 risk score',
+    value: data?.risk?.riskLevel ?? 'Loading...',
+    detail: `${data?.risk?.riskScore ?? '--'} risk score`,
     icon: ShieldCheck,
   },
   {
     label: 'Shariah Status',
-    value: 'Compliant',
-    detail: 'High confidence',
+    value:
+      data?.shariah?.summary?.status ??
+      'Loading...',
+    detail:
+      data?.shariah?.summary?.confidence ??
+      '',
     icon: BrainCircuit,
   },
 ]
