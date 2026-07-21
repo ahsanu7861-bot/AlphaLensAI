@@ -1,9 +1,9 @@
 import { api } from "./api";
 
 export async function getStockAnalysis(symbol: string) {
-  const response = await api.get(
-    `/api/analyze/${symbol.trim().toUpperCase()}`
-  );
+  const normalizedSymbol = symbol.trim().toUpperCase();
 
-  return response.data;
+  const response = await api.get(`/api/analyze/${normalizedSymbol}`);
+
+  return response.data.data;
 }
