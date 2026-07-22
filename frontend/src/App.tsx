@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   BarChart3,
   Bell,
-  ChevronRight,
   Eye,
   LayoutDashboard,
   Search,
@@ -12,7 +11,8 @@ import { useAnalysis } from './hooks/useAnalysis'
 import StockChart from './components/StockChart'
 import AIExplanation from './components/dashboard/AIExplanation'
 import ImportantLevels from './components/dashboard/ImportantLevels'
-import MetricsGrid from './components/dashboard/MetricsGrid'
+import AIVerdictPanel from './components/dashboard/AIVerdictPanel'
+import TechnicalIndicators from './components/dashboard/TechnicalIndicators'
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, active: true },
@@ -134,79 +134,54 @@ function App() {
           </div>
         </header>
 
-        <main className="p-5 md:p-8">
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/10 via-white/[0.03] to-transparent p-6 md:p-8">
-            <div className="max-w-2xl">
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-                AI-powered market intelligence
-              </span>
-
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
-                Make clearer market decisions.
-              </h2>
-
-              <p className="mt-4 max-w-xl leading-7 text-slate-400">
-                Analyze technical structure, risk, market agreement and Shariah
-                compliance through one intelligent platform.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => {
-                  document.querySelector<HTMLInputElement>(
-                    'input[aria-label="Stock ticker"]',
-                  )?.focus()
-                }}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400"
-              >
-                Analyze a stock
-                <ChevronRight size={17} />
-              </button>
-            </div>
-          </section>
-
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-              Unable to analyze “{symbol}”. Check the ticker and try again.
-            </div>
-          )}
-
-          <section className="mt-8">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold">
-                {symbol} Intelligence Snapshot
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Latest AzaLens technical assessment
-              </p>
-            </div>
-
-            <MetricsGrid data={data} />
-          </section>
-
-          <div className="mt-8">
-            <StockChart symbol={symbol} />
-          </div>
-
-          <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-            <AIExplanation
-              trend={trend}
-              confidence={confidence}
-              risk={risk}
-              shariah={shariah}
-              explanation={explanation}
-            />
-
-            <ImportantLevels
-              support={data?.confluence?.nearestSupport?.zone?.center}
-              confluence={data?.confluence?.strongestZone?.zone?.center}
-              currentPrice={data?.market?.data?.price}
-            />
-          </section>
-        </main>
-      </div>
+<main className="p-5 md:p-8">
+  {error && (
+    <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+      Unable to analyze “{symbol}”. Check the ticker and try again.
     </div>
-  )
-}
+  )}
 
-export default App
+  <AIVerdictPanel
+    symbol={symbol}
+    price={data?.market?.data?.price ?? 0}
+    changePercent={data?.market?.data?.changePercent ?? 0}
+    trend={data?.trend?.trend ?? 'Neutral'}
+    conviction={data?.agreement?.confidence ?? 0}
+    riskLevel={data?.risk?.riskLevel ?? 'Unknown'}
+    shariahStatus={data?.shariah?.summary?.status ?? 'Unknown'}
+    thesis={
+      data?.explanation?.overallAssessment ??
+      'AzaLens is generating the current market thesis...'
+    }
+    support={data?.confluence?.nearestSupport?.zone?.center}
+    resistance={data?.confluence?.strongestZone?.zone?.center}
+  />
+
+  <div className="mt-8">
+    <StockChart symbol={symbol} />
+  </div>
+
+  <div className="mt-8">
+    <TechnicalIndicators data={data} />
+  </div>
+
+  <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+    <AIExplanation
+      trend={trend}
+      confidence={confidence}
+      risk={risk}
+      shariah={shariah}
+      explanation={explanation}
+    />
+
+    <ImportantLevels
+      support={data?.confluence?.nearestSupport?.zone?.center}
+      confluence={data?.confluence?.strongestZone?.zone?.center}
+      currentPrice={data?.market?.data?.price}
+    />
+  </section>
+</main>
+</div>
+</div> 
+)
+} export default App
