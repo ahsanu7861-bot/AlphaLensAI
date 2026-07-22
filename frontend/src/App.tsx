@@ -9,10 +9,12 @@ import {
 } from 'lucide-react'
 import { useAnalysis } from './hooks/useAnalysis'
 import StockChart from './components/StockChart'
-import AIExplanation from './components/dashboard/AIExplanation'
 import ImportantLevels from './components/dashboard/ImportantLevels'
 import AIVerdictPanel from './components/dashboard/AIVerdictPanel'
 import TechnicalIndicators from './components/dashboard/TechnicalIndicators'
+import EvidenceMatrix from './components/dashboard/EvidenceMatrix'
+import TradePlan from './components/dashboard/TradePlan'
+import AIExplanation from './components/dashboard/AIExplanation'
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, active: true },
@@ -47,7 +49,13 @@ function App() {
   const confidence = data?.agreement?.confidence ?? '--'
   const risk = data?.risk?.riskLevel ?? '--'
   const shariah = data?.shariah?.summary?.status ?? '--'
-
+const evidenceScores = {
+  trendScore: data?.trend?.score ?? 95,
+  momentumScore: 82,
+  volumeScore: 71,
+  volatilityScore: 56,
+  structureScore: 88,
+}
   return (
     <div className="min-h-screen bg-[#080b12] text-slate-100">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-white/10 bg-[#0b0f18] lg:flex lg:flex-col">
@@ -164,8 +172,18 @@ function App() {
   <div className="mt-8">
     <TechnicalIndicators data={data} />
   </div>
-
+<EvidenceMatrix {...evidenceScores} />
   <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+    <TradePlan
+  verdict="BUY"
+  conviction={data?.agreement?.confidence ?? 0}
+  entry="$318 - $320"
+  confirmation="Break above $330"
+  stop="Below EMA20"
+  target1="$336"
+  target2="$344"
+  summary="Trend, momentum and volume remain supportive. Price is approaching resistance, so confirmation above $330 or a pullback toward support would provide a higher-quality technical setup."
+/>
     <AIExplanation
       trend={trend}
       confidence={confidence}
