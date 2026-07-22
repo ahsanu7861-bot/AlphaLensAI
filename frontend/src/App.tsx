@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import {
-  Activity,
   BarChart3,
   Bell,
-  BrainCircuit,
   ChevronRight,
   Eye,
   LayoutDashboard,
   Search,
-  ShieldCheck,
-  TrendingUp,
   WalletCards,
 } from 'lucide-react'
 import { useAnalysis } from './hooks/useAnalysis'
+import StockChart from './components/StockChart'
+import AIExplanation from './components/dashboard/AIExplanation'
+import ImportantLevels from './components/dashboard/ImportantLevels'
+import MetricsGrid from './components/dashboard/MetricsGrid'
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, active: true },
@@ -21,46 +21,12 @@ const navigation = [
   { label: 'Watchlist', icon: Eye },
 ]
 
-
-
-
 function App() {
   const [input, setInput] = useState('AAPL')
   const [symbol, setSymbol] = useState('AAPL')
 
-  const { data,isLoading, error } = useAnalysis(symbol)
-const metrics = [
-  {
-    label: 'Market Trend',
-    value: data?.trend?.trend ?? 'Loading...',
-    detail: `${data?.trend?.score ?? '--'} trend score`,
-    icon: TrendingUp,
-  },
-  {
-    label: 'Agreement',
-    value: `${data?.agreement?.confidence ?? '--'}%`,
-    detail:
-      data?.agreement?.agreementSummary ??
-      'Loading...',
-    icon: Activity,
-  },
-  {
-    label: 'Technical Risk',
-    value: data?.risk?.riskLevel ?? 'Loading...',
-    detail: `${data?.risk?.riskScore ?? '--'} risk score`,
-    icon: ShieldCheck,
-  },
-  {
-    label: 'Shariah Status',
-    value:
-      data?.shariah?.summary?.status ??
-      'Loading...',
-    detail:
-      data?.shariah?.summary?.confidence ??
-      '',
-    icon: BrainCircuit,
-  },
-]
+  const { data, isLoading, error } = useAnalysis(symbol)
+
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -73,6 +39,14 @@ const metrics = [
     setInput(nextSymbol)
     setSymbol(nextSymbol)
   }
+
+  const explanation =
+    data?.agreement?.agreementSummary ?? 'Waiting for AI analysis...'
+
+  const trend = data?.trend?.trend ?? '--'
+  const confidence = data?.agreement?.confidence ?? '--'
+  const risk = data?.risk?.riskLevel ?? '--'
+  const shariah = data?.shariah?.summary?.status ?? '--'
 
   return (
     <div className="min-h-screen bg-[#080b12] text-slate-100">
@@ -207,78 +181,27 @@ const metrics = [
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {metrics.map(({ label, value, detail, icon: Icon }) => (
-                <article
-                  key={label}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-slate-500">{label}</p>
-                      <p className="mt-3 text-xl font-semibold">{value}</p>
-                    </div>
-
-                    <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400">
-                      <Icon size={20} />
-                    </div>
-                  </div>
-
-                  <p className="mt-5 text-xs text-slate-500">{detail}</p>
-                </article>
-              ))}
-            </div>
+            <MetricsGrid data={data} />
           </section>
 
+          <div className="mt-8">
+            <StockChart symbol={symbol} />
+          </div>
+
           <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-            <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">AI Market Explanation</h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Clear interpretation of the technical evidence
-                  </p>
-                </div>
+            <AIExplanation
+              trend={trend}
+              confidence={confidence}
+              risk={risk}
+              shariah={shariah}
+              explanation={explanation}
+            />
 
-                <BrainCircuit className="text-emerald-400" size={22} />
-              </div>
-
-              <p className="mt-6 leading-7 text-slate-300">
-                AAPL currently shows a strong bullish structure, supported by
-                moving averages, MACD momentum and trend strength. Conviction
-                remains limited by weak relative volume and bearish
-                candlestick evidence.
-              </p>
-            </article>
-
-            <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <h3 className="font-semibold">Important Levels</h3>
-
-              <div className="mt-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">
-                    Nearest support
-                  </span>
-                  <span className="font-medium">$317.40</span>
-                </div>
-
-                <div className="h-px bg-white/10" />
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">
-                    Strongest confluence
-                  </span>
-                  <span className="font-medium">$302.75</span>
-                </div>
-
-                <div className="h-px bg-white/10" />
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Current price</span>
-                  <span className="font-medium text-emerald-400">$325.98</span>
-                </div>
-              </div>
-            </article>
+            <ImportantLevels
+              support={data?.confluence?.nearestSupport?.zone?.center}
+              confluence={data?.confluence?.strongestZone?.zone?.center}
+              currentPrice={data?.market?.data?.price}
+            />
           </section>
         </main>
       </div>
