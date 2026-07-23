@@ -18,9 +18,9 @@ export default function ProductPreview() {
         </h2>
 
         <p className="mt-5 text-lg leading-8 text-slate-400">
-          Every verdict includes technical evidence, risk analysis and
-          a clear trade plan—so you understand the reasoning before
-          risking capital.
+          Every stock analysis includes technical evidence, risk analysis
+          and a clear decision framework—so you understand the reasoning
+          before risking capital.
         </p>
       </div>
 

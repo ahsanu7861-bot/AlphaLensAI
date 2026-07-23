@@ -10,7 +10,7 @@ export default function AICommandBar() {
           <Search className="text-slate-400" size={20} />
 
           <input
-            placeholder="Analyze any symbol..."
+            placeholder="Analyze a stock ticker..."
             className="w-full bg-transparent text-lg text-white placeholder:text-slate-500 outline-none"
           />
 
@@ -18,7 +18,7 @@ export default function AICommandBar() {
 
         <div className="mt-4 flex flex-wrap gap-2">
 
-          {["AAPL","NVDA","TSLA","AMD","META","BTC"].map(symbol=>(
+          {["AAPL","NVDA","TSLA","ASML","TM","NVS"].map(symbol=>(
             <button
               key={symbol}
               className="rounded-full bg-white/5 px-4 py-2 text-sm text-slate-300 hover:bg-emerald-500/20 transition"

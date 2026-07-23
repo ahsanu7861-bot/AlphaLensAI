@@ -12,7 +12,7 @@ export default function Navbar() {
           <div>
             <p className="text-lg font-semibold text-white">AzaLens</p>
             <p className="text-xs text-slate-500">
-              AI Market Intelligence
+              AI Stock Intelligence
             </p>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Input } from "../ui";
 
-const symbols = ["AAPL", "NVDA", "TSLA", "AMD", "META", "BTC"];
+const symbols = ["AAPL", "NVDA", "TSLA", "ASML", "TM", "NVS"];
 
 export default function SearchBox() {
   const navigate = useNavigate();
@@ -60,6 +60,11 @@ export default function SearchBox() {
           </Button>
         ))}
       </div>
+
+      <p className="px-1 pt-3 text-left text-xs leading-5 text-slate-500">
+        Enter a listed stock ticker. Crypto, forex, commodities, CFDs,
+        options and leveraged products are not supported.
+      </p>
     </form>
   );
 }

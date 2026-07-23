@@ -3,17 +3,15 @@ import { Badge, Card } from "../ui";
 type MarketCardProps = {
   name: string;
   symbol: string;
-  value: string;
-  change: string;
-  positive: boolean;
+  exchange: string;
+  market: string;
 };
 
 export default function MarketCard({
   name,
   symbol,
-  value,
-  change,
-  positive,
+  exchange,
+  market,
 }: MarketCardProps) {
   return (
     <Card variant="glass" interactive className="h-full">
@@ -28,13 +26,15 @@ export default function MarketCard({
           </h3>
         </div>
 
-        <Badge variant={positive ? "success" : "danger"}>
-          {change}
-        </Badge>
+        <Badge variant="info">{exchange}</Badge>
       </div>
 
-      <p className="mt-8 text-3xl font-bold tracking-tight text-white">
-        {value}
+      <p className="mt-8 text-sm font-medium text-slate-300">
+        {market}
+      </p>
+
+      <p className="mt-2 text-xs leading-5 text-slate-500">
+        Listed cash equity
       </p>
     </Card>
   );
