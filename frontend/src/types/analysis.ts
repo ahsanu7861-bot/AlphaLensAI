@@ -14,6 +14,8 @@ export interface AnalysisResponse {
 
     agreement: {
       confidence: number
+      agreement?: string
+      direction?: string
       agreementSummary?: string
     }
 
@@ -82,3 +84,5 @@ export interface AnalysisResponse {
     }
   }
 }
+
+export type AnalysisData = AnalysisResponse["data"]
