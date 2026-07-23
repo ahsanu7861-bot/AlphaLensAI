@@ -65,7 +65,12 @@ export default function AnalysisPage() {
             isLoading={isLoading}
           />
           <MarketStructure />
-          <TechnicalEvidence />
+          <TechnicalEvidence
+            indicators={data?.indicators}
+            agreement={data?.agreement}
+            currency={data?.market?.data?.currency}
+            isLoading={isLoading}
+          />
           <RiskAssessment
             risk={data?.risk}
             currency={data?.market?.data?.currency}

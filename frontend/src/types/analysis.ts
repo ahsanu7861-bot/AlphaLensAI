@@ -37,43 +37,146 @@ export interface AnalysisResponse {
     }
 
     agreement: {
+      success?: boolean
+      provider?: string
+      symbol?: string
       confidence: number
       agreement?: string
       direction?: string
       agreementSummary?: string
+      agreementDetails?: string[]
+      bullishSignals?: number
+      bearishSignals?: number
+      neutralSignals?: number
+      bullish?: string[]
+      bearish?: string[]
+      neutral?: string[]
+      totalIndicators?: number
     }
 
     indicators: {
       rsi: {
-        rsi: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        rsi?: number
+        signal?: string
+        dataSource?: string
       }
 
       ema: {
-        ema20: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        ema20?: number
+        currentPrice?: number
+        signal?: string
+        dataSource?: string
       }
 
       sma: {
-        sma50: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        sma50?: number
+        currentPrice?: number
+        signal?: string
+        dataSource?: string
       }
 
       macd: {
-        macd: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        macd?: number
+        signalLine?: number
+        histogram?: number
+        signal?: string
+        dataSource?: string
+      }
+
+      bollinger?: {
+        success?: boolean
+        provider?: string
+        symbol?: string
+        upperBand?: number
+        middleBand?: number
+        lowerBand?: number
+        currentPrice?: number
+        signal?: string
+        dataSource?: string
       }
 
       adx: {
-        adx: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        adx?: number
+        plusDI?: number
+        minusDI?: number
+        signal?: string
+        dataSource?: string
       }
 
       atr: {
-        atr: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        atr?: number
+        signal?: string
+        dataSource?: string
       }
 
       obv: {
-        signal: string
+        success?: boolean
+        provider?: string
+        symbol?: string
+        obv?: number
+        signal?: string
+        explanation?: string
+        dataSource?: string
       }
 
       rvol: {
-        rvol: number
+        success?: boolean
+        provider?: string
+        symbol?: string
+        todayVolume?: number
+        averageVolume30?: number
+        rvol?: number
+        signal?: string
+        explanation?: string
+        dataSource?: string
+      }
+
+      volumeSpike?: {
+        success?: boolean
+        provider?: string
+        symbol?: string
+        todayVolume?: number
+        averageVolume30?: number
+        rvol?: number
+        volumeSpikeDetected?: boolean
+        level?: string
+        signal?: string
+        explanation?: string
+        dataSource?: string
+      }
+
+      candlestick?: {
+        success?: boolean
+        provider?: string
+        symbol?: string
+        pattern?: string
+        bias?: string
+        strength?: number
+        lastCandle?: {
+          open?: number
+          high?: number
+          low?: number
+          close?: number
+        }
+        dataSource?: string
       }
     }
 
