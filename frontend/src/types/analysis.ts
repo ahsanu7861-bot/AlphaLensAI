@@ -96,8 +96,49 @@ export interface AnalysisResponse {
     }
 
     risk: {
-      riskLevel: string
+      success?: boolean
+      symbol?: string
+      riskLevel?: string
       riskScore?: number
+      volatility?: string
+      currentPrice?: number | null
+      atr?: number | null
+      atrPercent?: number | null
+      agreementConfidence?: number | null
+      referenceDistances?: {
+        tight?: {
+          atrMultiplier?: number | null
+          distance?: number | null
+          percent?: number | null
+        }
+        standard?: {
+          atrMultiplier?: number | null
+          distance?: number | null
+          percent?: number | null
+        }
+        wide?: {
+          atrMultiplier?: number | null
+          distance?: number | null
+          percent?: number | null
+        }
+      }
+      priceReferenceLevels?: {
+        currentPrice?: number | null
+        belowCurrentPrice?: {
+          tight?: number | null
+          standard?: number | null
+          wide?: number | null
+        }
+        aboveCurrentPrice?: {
+          tight?: number | null
+          standard?: number | null
+          wide?: number | null
+        }
+      }
+      riskSummary?: string
+      riskNotes?: string[]
+      supportiveFactors?: string[]
+      disclaimer?: string
     }
 
     shariah: {

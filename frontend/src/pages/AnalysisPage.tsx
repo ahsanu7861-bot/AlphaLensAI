@@ -66,7 +66,11 @@ export default function AnalysisPage() {
           />
           <MarketStructure />
           <TechnicalEvidence />
-          <RiskAssessment />
+          <RiskAssessment
+            risk={data?.risk}
+            currency={data?.market?.data?.currency}
+            isLoading={isLoading}
+          />
           <IslamicCompliance />
           <AIReasoning />
           <TradePlan />
