@@ -1,10 +1,34 @@
 export interface AnalysisResponse {
   data: {
     market: {
-      data: {
-        price: number
-        changePercent: number
+      success?: boolean
+      provider?: string
+      symbol?: string
+      data?: {
+        symbol?: string
+        company?: string
+        exchange?: string
+        currency?: string
+        price?: number
+        previousClose?: number
+        open?: number
+        high?: number
+        low?: number
+        change?: number
+        changePercent?: number
+        timestamp?: number
       }
+    }
+
+    priceContext?: {
+      livePrice?: number | null
+      latestHistoricalClose?: number | null
+      livePriceAvailable?: boolean
+      historicalCloseAvailable?: boolean
+      pricesMatch?: boolean
+      analysisPrice?: number | null
+      analysisPriceSource?: string
+      note?: string
     }
 
     trend: {

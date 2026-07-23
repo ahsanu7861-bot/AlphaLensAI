@@ -46,7 +46,12 @@ export default function AnalysisPage() {
             </div>
           )}
 
-          <CompanyOverview />
+          <CompanyOverview
+            symbol={normalizedSymbol}
+            market={data?.market}
+            priceContext={data?.priceContext}
+            isLoading={isLoading}
+          />
           <AIVerdict
             direction={
               data?.agreement?.direction ?? data?.agreement?.agreement
