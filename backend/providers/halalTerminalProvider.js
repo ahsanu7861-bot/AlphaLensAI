@@ -1,5 +1,14 @@
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 const { getCache, setCache } = require("../utils/cache");
+const {
+  DATA_MODES,
+  getShariahRuntimeConfig,
+} = require("../config/shariahRuntime");
+const {
+  reserveEstimatedTokens,
+} = require("../utils/halalTerminalBudget");
 
 // ============================================================
 // AzaLens - Halal Terminal Provider
@@ -309,6 +318,9 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
       cacheKey: metadata.cacheKey || null,
       fetchedAt: metadata.fetchedAt || new Date().toISOString(),
       responseTimeMs: toNullableNumber(metadata.responseTimeMs),
+      dataMode: metadata.dataMode || null,
+      fixture: metadata.fixture === true,
+      costProtection: metadata.costProtection || null,
     },
     raw,
   };
@@ -362,6 +374,9 @@ function buildFailureResult(symbol, error, metadata = {}) {
       cacheKey: metadata.cacheKey || null,
       fetchedAt: new Date().toISOString(),
       responseTimeMs: toNullableNumber(metadata.responseTimeMs),
+      dataMode: metadata.dataMode || null,
+      fixture: metadata.fixture === true,
+      costProtection: metadata.costProtection || null,
     },
   };
 }
@@ -431,6 +446,59 @@ function classifyAxiosError(error) {
   };
 }
 
+function getFixturePath(fixtureDirectory, symbol) {
+  const safeFileName = symbol.replace(/[^A-Z0-9-]/g, "_");
+  return path.join(fixtureDirectory, `${safeFileName}.json`);
+}
+
+function loadFixture(symbol, runtimeConfig, cacheKey) {
+  const fixturePath = getFixturePath(
+    runtimeConfig.fixtureDirectory,
+    symbol
+  );
+
+  try {
+    const raw = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
+    const normalized = normalizeHalalTerminalResponse(raw, {
+      fromCache: false,
+      cacheKey,
+      fetchedAt: new Date().toISOString(),
+      responseTimeMs: 0,
+      dataMode: DATA_MODES.FIXTURE,
+      fixture: true,
+    });
+
+    return {
+      ...normalized,
+      provider: {
+        ...normalized.provider,
+        id: "halal_terminal_fixture",
+        name: "Halal Terminal Development Fixture",
+      },
+    };
+  } catch (error) {
+    const fixtureMissing = error.code === "ENOENT";
+
+    return buildFailureResult(
+      symbol,
+      {
+        code: fixtureMissing
+          ? "SHARIAH_FIXTURE_NOT_FOUND"
+          : "SHARIAH_FIXTURE_INVALID",
+        message: fixtureMissing
+          ? `No approved Shariah fixture is available for ${symbol}.`
+          : `The Shariah fixture for ${symbol} is invalid.`,
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.FIXTURE,
+        fixture: true,
+      }
+    );
+  }
+}
+
 async function fetchScreening(symbol) {
   const normalizedSymbol = normalizeTicker(symbol);
 
@@ -440,6 +508,91 @@ async function fetchScreening(symbol) {
       message: "A valid stock symbol is required.",
       retryable: false,
     });
+  }
+
+  const runtimeConfig = getShariahRuntimeConfig();
+  const cacheKey =
+    runtimeConfig.dataMode === DATA_MODES.FIXTURE
+      ? `shariah:fixture:${normalizedSymbol}`
+      : `shariah:provider:${normalizedSymbol}`;
+
+  if (runtimeConfig.dataMode === DATA_MODES.OFFLINE) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: runtimeConfig.invalidMode
+          ? "SHARIAH_DATA_MODE_INVALID"
+          : "SHARIAH_LIVE_API_DISABLED",
+        message: runtimeConfig.invalidMode
+          ? "SHARIAH_DATA_MODE is invalid, so screening was blocked."
+          : "Live Shariah screening is disabled to protect API quota.",
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.OFFLINE,
+      }
+    );
+  }
+
+  const cached = getCache(cacheKey);
+
+  if (cached) {
+    return {
+      ...cached,
+      metadata: {
+        ...(cached.metadata || {}),
+        fromCache: true,
+        cacheKey,
+        dataMode: runtimeConfig.dataMode,
+      },
+    };
+  }
+
+  if (runtimeConfig.dataMode === DATA_MODES.FIXTURE) {
+    const fixtureResult = loadFixture(
+      normalizedSymbol,
+      runtimeConfig,
+      cacheKey
+    );
+
+    if (fixtureResult.success) {
+      setCache(cacheKey, fixtureResult, DEFAULT_CACHE_MINUTES);
+    }
+
+    return fixtureResult;
+  }
+
+  if (runtimeConfig.dataMode === DATA_MODES.CACHE_ONLY) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: "SHARIAH_CACHE_MISS",
+        message:
+          "No cached Shariah result is available, and live access is disabled.",
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.CACHE_ONLY,
+      }
+    );
+  }
+
+  if (!runtimeConfig.liveApiEnabled) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: "HALAL_TERMINAL_LIVE_OPT_IN_REQUIRED",
+        message:
+          "Live Halal Terminal access requires explicit cost-safety opt-in.",
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.LIVE,
+      }
+    );
   }
 
   const apiKey = process.env.HALAL_TERMINAL_API_KEY;
@@ -454,20 +607,6 @@ async function fetchScreening(symbol) {
     DEFAULT_CACHE_MINUTES
   );
 
-  const cacheKey = `shariah:${normalizedSymbol}`;
-  const cached = getCache(cacheKey);
-
-  if (cached) {
-    return {
-      ...cached,
-      metadata: {
-        ...(cached.metadata || {}),
-        fromCache: true,
-        cacheKey,
-      },
-    };
-  }
-
   if (!apiKey) {
     return buildFailureResult(
       normalizedSymbol,
@@ -477,12 +616,36 @@ async function fetchScreening(symbol) {
           "HALAL_TERMINAL_API_KEY is not configured in the environment.",
         retryable: false,
       },
-      { cacheKey }
+      {
+        cacheKey,
+        dataMode: DATA_MODES.LIVE,
+      }
     );
   }
 
   if (inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey);
+  }
+
+  const costProtection = reserveEstimatedTokens(
+    runtimeConfig,
+    normalizedSymbol
+  );
+
+  if (!costProtection.allowed) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: costProtection.code,
+        message: costProtection.message,
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.LIVE,
+        costProtection,
+      }
+    );
   }
 
   const requestPromise = (async () => {
@@ -509,6 +672,8 @@ async function fetchScreening(symbol) {
         cacheKey,
         fetchedAt: new Date().toISOString(),
         responseTimeMs: Date.now() - startedAt,
+        dataMode: DATA_MODES.LIVE,
+        costProtection,
       });
 
       setCache(cacheKey, normalized, cacheMinutes);
@@ -519,6 +684,8 @@ async function fetchScreening(symbol) {
       return buildFailureResult(normalizedSymbol, classified, {
         cacheKey,
         responseTimeMs: Date.now() - startedAt,
+        dataMode: DATA_MODES.LIVE,
+        costProtection,
       });
     } finally {
       inFlightRequests.delete(cacheKey);
