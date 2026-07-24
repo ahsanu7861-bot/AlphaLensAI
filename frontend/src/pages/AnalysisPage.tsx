@@ -76,7 +76,10 @@ export default function AnalysisPage() {
             currency={data?.market?.data?.currency}
             isLoading={isLoading}
           />
-          <IslamicCompliance />
+          <IslamicCompliance
+            data={data?.shariah}
+            isLoading={isLoading}
+          />
           <AIReasoning />
           <TradePlan />
         </Container>

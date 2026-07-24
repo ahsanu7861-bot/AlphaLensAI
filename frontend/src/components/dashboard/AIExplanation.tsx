@@ -56,7 +56,7 @@ export default function AIExplanation({
           </div>
 
           <div className="rounded-xl bg-white/5 p-4">
-            <p className="text-xs text-slate-500">Shariah</p>
+            <p className="text-xs text-slate-500">AAOIFI Shariah</p>
 
             <p className="mt-2 text-lg font-semibold text-emerald-400">
               {shariah}

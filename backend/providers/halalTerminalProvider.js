@@ -20,6 +20,20 @@ const PROVIDER_ID = "halal_terminal";
 const DEFAULT_BASE_URL = "https://api.halalterminal.com";
 const DEFAULT_TIMEOUT_MS = 5000;
 const DEFAULT_CACHE_MINUTES = 1440;
+const DEFAULT_METHODOLOGY_IDS = Object.freeze([
+  "AAOIFI",
+  "DJIM",
+  "FTSE",
+  "MSCI",
+  "SP",
+]);
+const METHODOLOGY_LABELS = Object.freeze({
+  AAOIFI: "AAOIFI",
+  DJIM: "DJIM",
+  FTSE: "FTSE",
+  MSCI: "MSCI",
+  SP: "S&P",
+});
 
 const inFlightRequests = new Map();
 
@@ -74,11 +88,91 @@ function normalizeDisclaimer(disclaimer) {
   };
 }
 
-function normalizeMethodology(name, methodology) {
+function normalizeMethodologyId(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/&/g, "")
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (["S_P", "SANDP", "S_AND_P", "SNP"].includes(normalized)) {
+    return "SP";
+  }
+
+  return normalized;
+}
+
+function collectMethodologyIds(raw, methodologySource) {
+  const discovered = new Set(DEFAULT_METHODOLOGY_IDS);
+  const sources = [
+    methodologySource,
+    raw?.methodology_summary,
+  ];
+
+  sources.forEach((source) => {
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+      return;
+    }
+
+    Object.keys(source).forEach((key) => {
+      const id = normalizeMethodologyId(key);
+
+      if (id) {
+        discovered.add(id);
+      }
+    });
+  });
+
+  return [...discovered];
+}
+
+function getMethodologyFallback(raw, methodologyId) {
+  const summary =
+    raw?.methodology_summary &&
+    typeof raw.methodology_summary === "object"
+      ? raw.methodology_summary
+      : {};
+
+  const summaryKey = Object.keys(summary).find(
+    (key) => normalizeMethodologyId(key) === methodologyId
+  );
+
+  if (summaryKey) {
+    return toNullableBoolean(summary[summaryKey]);
+  }
+
+  const legacyFields = {
+    AAOIFI: "aaoifi_compliant",
+    DJIM: "djim_compliant",
+    FTSE: "ftse_compliant",
+    MSCI: "msci_compliant",
+    SP: "sp_compliant",
+  };
+
+  return toNullableBoolean(raw?.[legacyFields[methodologyId]]);
+}
+
+function normalizeMethodology(
+  methodologyId,
+  methodology,
+  fallbackCompliance
+) {
+  const name = METHODOLOGY_LABELS[methodologyId] || methodologyId;
+
   if (!methodology || typeof methodology !== "object") {
     return {
+      id: methodologyId,
       name,
-      isCompliant: null,
+      isCompliant: fallbackCompliance,
       disposition: null,
       verified: null,
       reason: null,
@@ -91,8 +185,11 @@ function normalizeMethodology(name, methodology) {
   const alternate = methodology.alternate_basis;
 
   return {
+    id: methodologyId,
     name,
-    isCompliant: toNullableBoolean(methodology.is_compliant),
+    isCompliant:
+      toNullableBoolean(methodology.is_compliant) ??
+      fallbackCompliance,
     disposition: toNullableString(methodology.disposition),
     verified: toNullableBoolean(methodology.verified),
     reason: toNullableString(methodology.reason),
@@ -186,9 +283,26 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
       ? raw.by_methodology
       : {};
 
-  const methodologyNames = ["AAOIFI", "DJIM", "FTSE", "MSCI", "SP"];
-  const methodologies = methodologyNames.map((name) =>
-    normalizeMethodology(name, methodologySource[name])
+  const methodologyIds = collectMethodologyIds(
+    raw,
+    methodologySource
+  );
+  const methodologies = methodologyIds.map((methodologyId) => {
+    const sourceKey = Object.keys(methodologySource).find(
+      (key) => normalizeMethodologyId(key) === methodologyId
+    );
+
+    return normalizeMethodology(
+      methodologyId,
+      sourceKey ? methodologySource[sourceKey] : null,
+      getMethodologyFallback(raw, methodologyId)
+    );
+  });
+  const methodologySummary = Object.fromEntries(
+    methodologies.map((methodology) => [
+      methodology.id,
+      methodology.isCompliant,
+    ])
   );
 
   const disclaimers = Array.isArray(raw.disclaimers)
@@ -231,23 +345,7 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
       purificationRatePercent: toNullableNumber(raw.purification_rate),
     },
     methodologies: {
-      summary:
-        raw.methodology_summary &&
-        typeof raw.methodology_summary === "object"
-          ? {
-              AAOIFI: toNullableBoolean(raw.methodology_summary.AAOIFI),
-              DJIM: toNullableBoolean(raw.methodology_summary.DJIM),
-              FTSE: toNullableBoolean(raw.methodology_summary.FTSE),
-              MSCI: toNullableBoolean(raw.methodology_summary.MSCI),
-              SP: toNullableBoolean(raw.methodology_summary.SP),
-            }
-          : {
-              AAOIFI: toNullableBoolean(raw.aaoifi_compliant),
-              DJIM: toNullableBoolean(raw.djim_compliant),
-              FTSE: toNullableBoolean(raw.ftse_compliant),
-              MSCI: toNullableBoolean(raw.msci_compliant),
-              SP: toNullableBoolean(raw.sp_compliant),
-            },
+      summary: methodologySummary,
       details: methodologies,
     },
     financials: {
@@ -353,13 +451,9 @@ function buildFailureResult(symbol, error, metadata = {}) {
       purificationRatePercent: null,
     },
     methodologies: {
-      summary: {
-        AAOIFI: null,
-        DJIM: null,
-        FTSE: null,
-        MSCI: null,
-        SP: null,
-      },
+      summary: Object.fromEntries(
+        DEFAULT_METHODOLOGY_IDS.map((id) => [id, null])
+      ),
       details: [],
     },
     disclaimers: [],

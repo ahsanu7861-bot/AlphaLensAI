@@ -20,6 +20,11 @@ const CONFIDENCE = Object.freeze({
   UNKNOWN: "UNKNOWN",
 });
 
+const PRIMARY_METHODOLOGY = Object.freeze({
+  id: "AAOIFI",
+  name: "AAOIFI",
+});
+
 function toNullableNumber(value) {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -49,135 +54,57 @@ function formatRatioAsPercent(value, digits = 2) {
   return `${(number * 100).toFixed(digits)}%`;
 }
 
-function countMethodologyResults(details = []) {
-  return details.reduce(
-    (summary, methodology) => {
-      if (methodology?.isCompliant === true) {
-        summary.compliant += 1;
-      } else if (methodology?.isCompliant === false) {
-        summary.nonCompliant += 1;
-      } else {
-        summary.unknown += 1;
-      }
+function normalizeMethodologyId(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
 
-      if (methodology?.verified === true) {
-        summary.verified += 1;
-      }
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/&/g, "")
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 
-      summary.total += 1;
-      return summary;
-    },
-    {
-      total: 0,
-      compliant: 0,
-      nonCompliant: 0,
-      unknown: 0,
-      verified: 0,
-    }
-  );
+  if (["S_P", "SANDP", "S_AND_P", "SNP"].includes(normalized)) {
+    return "SP";
+  }
+
+  return normalized || null;
 }
 
-function determineConfidence(providerResult, methodologyCounts) {
-  if (!providerResult?.success) {
-    return CONFIDENCE.UNKNOWN;
+function methodologyStatus(isCompliant) {
+  if (isCompliant === true) {
+    return STATUS.COMPLIANT;
   }
 
-  const lastCheckedAt = providerResult?.verification?.lastCheckedAt;
-  const isStale = providerResult?.verification?.isStale;
-
-  if (isStale === true) {
-    return CONFIDENCE.LOW;
+  if (isCompliant === false) {
+    return STATUS.NON_COMPLIANT;
   }
 
-  if (
-    methodologyCounts.total > 0 &&
-    methodologyCounts.verified === methodologyCounts.total &&
-    methodologyCounts.unknown === 0 &&
-    lastCheckedAt
-  ) {
-    return CONFIDENCE.HIGH;
-  }
-
-  if (
-    methodologyCounts.total > 0 &&
-    methodologyCounts.unknown < methodologyCounts.total
-  ) {
-    return CONFIDENCE.MEDIUM;
-  }
-
-  return CONFIDENCE.LOW;
+  return STATUS.UNKNOWN;
 }
 
-function buildHeadline(companyName, status, methodologyCounts) {
-  const company = companyName || "This instrument";
-
-  if (status === STATUS.COMPLIANT) {
-    if (
-      methodologyCounts.total > 0 &&
-      methodologyCounts.compliant === methodologyCounts.total
-    ) {
-      return `${company} passes all available Shariah screening methodologies.`;
-    }
-
-    return `${company} is reported as Shariah compliant by the screening provider.`;
-  }
-
-  if (status === STATUS.NON_COMPLIANT) {
-    if (methodologyCounts.nonCompliant > 0) {
-      return `${company} fails one or more Shariah screening methodologies.`;
-    }
-
-    return `${company} is reported as non-compliant by the screening provider.`;
-  }
-
-  return `Shariah compliance could not be verified for ${company}.`;
-}
-
-function buildSummary(providerResult, methodologyCounts, confidence) {
-  const status =
-    providerResult?.screening?.overallStatus || STATUS.UNKNOWN;
+function normalizeMethodologyResult(methodology, fallback = {}) {
+  const id =
+    normalizeMethodologyId(methodology?.id || methodology?.name) ||
+    normalizeMethodologyId(fallback.id) ||
+    null;
+  const isCompliant =
+    typeof methodology?.isCompliant === "boolean"
+      ? methodology.isCompliant
+      : typeof fallback.isCompliant === "boolean"
+        ? fallback.isCompliant
+        : null;
 
   return {
-    headline: buildHeadline(
-      providerResult?.company?.name,
-      status,
-      methodologyCounts
-    ),
-    status,
-    confidence,
-    explanation:
-      providerResult?.screening?.explanation ||
-      providerResult?.screening?.businessScreen?.reason ||
-      null,
-    purificationRatePercent:
-      providerResult?.screening?.purificationRatePercent ?? null,
-    purificationRateFormatted: formatPercent(
-      providerResult?.screening?.purificationRatePercent
-    ),
-    methodologiesPassed: methodologyCounts.compliant,
-    methodologiesFailed: methodologyCounts.nonCompliant,
-    methodologiesUnknown: methodologyCounts.unknown,
-    methodologiesTotal: methodologyCounts.total,
-  };
-}
-
-function buildMethodologies(providerResult) {
-  const details = Array.isArray(providerResult?.methodologies?.details)
-    ? providerResult.methodologies.details
-    : [];
-
-  return details.map((methodology) => ({
-    name: methodology?.name || null,
-    status:
-      methodology?.isCompliant === true
-        ? STATUS.COMPLIANT
-        : methodology?.isCompliant === false
-          ? STATUS.NON_COMPLIANT
-          : STATUS.UNKNOWN,
-    isCompliant:
-      typeof methodology?.isCompliant === "boolean"
-        ? methodology.isCompliant
-        : null,
+    id,
+    name:
+      methodology?.name ||
+      fallback.name ||
+      id,
+    status: methodologyStatus(isCompliant),
+    isCompliant,
     verified:
       typeof methodology?.verified === "boolean"
         ? methodology.verified
@@ -190,7 +117,118 @@ function buildMethodologies(providerResult) {
         ? methodology.basesDisagree
         : null,
     reason: methodology?.reason || null,
-  }));
+  };
+}
+
+function buildMethodologyResults(providerResult) {
+  const details = Array.isArray(providerResult?.methodologies?.details)
+    ? providerResult.methodologies.details
+    : [];
+  const summary =
+    providerResult?.methodologies?.summary &&
+    typeof providerResult.methodologies.summary === "object"
+      ? providerResult.methodologies.summary
+      : {};
+  const results = {};
+
+  details.forEach((methodology) => {
+    const normalized = normalizeMethodologyResult(methodology);
+
+    if (normalized.id) {
+      results[normalized.id] = normalized;
+    }
+  });
+
+  Object.entries(summary).forEach(([rawId, isCompliant]) => {
+    const id = normalizeMethodologyId(rawId);
+
+    if (!id || results[id]) {
+      return;
+    }
+
+    results[id] = normalizeMethodologyResult(
+      null,
+      {
+        id,
+        name: id === "SP" ? "S&P" : id,
+        isCompliant,
+      }
+    );
+  });
+
+  if (!results[PRIMARY_METHODOLOGY.id]) {
+    results[PRIMARY_METHODOLOGY.id] = normalizeMethodologyResult(
+      null,
+      PRIMARY_METHODOLOGY
+    );
+  }
+
+  return results;
+}
+
+function determineConfidence(providerResult, primaryMethodology) {
+  if (!providerResult?.success) {
+    return CONFIDENCE.UNKNOWN;
+  }
+
+  const lastCheckedAt = providerResult?.verification?.lastCheckedAt;
+  const isStale = providerResult?.verification?.isStale;
+
+  if (isStale === true) {
+    return CONFIDENCE.LOW;
+  }
+
+  if (
+    primaryMethodology?.status !== STATUS.UNKNOWN &&
+    primaryMethodology?.verified === true &&
+    lastCheckedAt
+  ) {
+    return CONFIDENCE.HIGH;
+  }
+
+  if (primaryMethodology?.status !== STATUS.UNKNOWN) {
+    return CONFIDENCE.MEDIUM;
+  }
+
+  return CONFIDENCE.LOW;
+}
+
+function buildHeadline(companyName, primaryMethodology) {
+  const company = companyName || "This instrument";
+  const status = primaryMethodology?.status || STATUS.UNKNOWN;
+
+  if (status === STATUS.COMPLIANT) {
+    return `${company} passes the AAOIFI Shariah screening.`;
+  }
+
+  if (status === STATUS.NON_COMPLIANT) {
+    return `${company} does not pass the AAOIFI Shariah screening.`;
+  }
+
+  return `AAOIFI Shariah compliance could not be verified for ${company}.`;
+}
+
+function buildSummary(providerResult, primaryMethodology, confidence) {
+  return {
+    headline: buildHeadline(
+      providerResult?.company?.name,
+      primaryMethodology
+    ),
+    status: primaryMethodology?.status || STATUS.UNKNOWN,
+    confidence,
+    methodologyId: PRIMARY_METHODOLOGY.id,
+    methodologyName: PRIMARY_METHODOLOGY.name,
+    explanation:
+      primaryMethodology?.reason ||
+      providerResult?.screening?.explanation ||
+      providerResult?.screening?.businessScreen?.reason ||
+      null,
+    purificationRatePercent:
+      providerResult?.screening?.purificationRatePercent ?? null,
+    purificationRateFormatted: formatPercent(
+      providerResult?.screening?.purificationRatePercent
+    ),
+  };
 }
 
 function buildBusinessActivity(providerResult) {
@@ -338,32 +376,38 @@ function buildDisclaimers(providerResult) {
 }
 
 function buildUnknownResult(symbol, providerResult) {
+  const methodologyResults = buildMethodologyResults(providerResult);
+  const primaryMethodology =
+    methodologyResults[PRIMARY_METHODOLOGY.id];
+
   return {
     success: false,
     symbol: symbol || providerResult?.symbol || null,
     module: {
       id: "shariah_compliance",
       name: "Shariah Compliance",
-      version: "0.4.1",
+      version: "0.5.0",
     },
     summary: {
-      headline: `Shariah compliance could not be verified${
+      headline: `AAOIFI Shariah compliance could not be verified${
         symbol ? ` for ${symbol}` : ""
       }.`,
       status: STATUS.UNKNOWN,
       confidence: CONFIDENCE.UNKNOWN,
+      methodologyId: PRIMARY_METHODOLOGY.id,
+      methodologyName: PRIMARY_METHODOLOGY.name,
       explanation:
         providerResult?.error?.message ||
         "The screening provider did not return a verified result.",
       purificationRatePercent: null,
       purificationRateFormatted: null,
-      methodologiesPassed: 0,
-      methodologiesFailed: 0,
-      methodologiesUnknown: 0,
-      methodologiesTotal: 0,
     },
     company: providerResult?.company || null,
-    methodologies: [],
+    primaryMethodology,
+    methodologies: {
+      primary: PRIMARY_METHODOLOGY.id,
+      results: methodologyResults,
+    },
     businessActivity: {
       status: "UNKNOWN",
       passed: null,
@@ -400,13 +444,12 @@ function transformProviderResult(providerResult) {
     return buildUnknownResult(providerResult?.symbol, providerResult);
   }
 
-  const methodologyCounts = countMethodologyResults(
-    providerResult?.methodologies?.details
-  );
-
+  const methodologyResults = buildMethodologyResults(providerResult);
+  const primaryMethodology =
+    methodologyResults[PRIMARY_METHODOLOGY.id];
   const confidence = determineConfidence(
     providerResult,
-    methodologyCounts
+    primaryMethodology
   );
 
   return {
@@ -415,15 +458,19 @@ function transformProviderResult(providerResult) {
     module: {
       id: "shariah_compliance",
       name: "Shariah Compliance",
-      version: "0.4.1",
+      version: "0.5.0",
     },
     summary: buildSummary(
       providerResult,
-      methodologyCounts,
+      primaryMethodology,
       confidence
     ),
     company: providerResult.company || null,
-    methodologies: buildMethodologies(providerResult),
+    primaryMethodology,
+    methodologies: {
+      primary: PRIMARY_METHODOLOGY.id,
+      results: methodologyResults,
+    },
     businessActivity: buildBusinessActivity(providerResult),
     financialScreen: buildFinancialScreen(providerResult),
     verification: providerResult.verification || null,
@@ -447,4 +494,5 @@ module.exports = {
   transformProviderResult,
   STATUS,
   CONFIDENCE,
+  PRIMARY_METHODOLOGY,
 };

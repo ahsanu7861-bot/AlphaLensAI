@@ -45,11 +45,11 @@ export default function MetricsGrid({ data }: MetricsGridProps) {
       icon: ShieldCheck,
     },
     {
-      title: 'Shariah Status',
+      title: 'AAOIFI Status',
       value: data?.shariah?.summary?.status ?? 'Loading...',
       subtitle:
         data?.shariah?.summary?.confidence !== undefined
-          ? String(data.shariah.summary.confidence)
+          ? `AAOIFI · ${String(data.shariah.summary.confidence)} confidence`
           : 'Waiting for screening result...',
       icon: BrainCircuit,
     },

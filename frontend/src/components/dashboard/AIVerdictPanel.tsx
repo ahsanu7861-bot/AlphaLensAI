@@ -54,9 +54,17 @@ export default function AIVerdictPanel({
         ? 'warning'
         : 'bullish'
 
-  const isCompliant = shariahStatus
-    .toLowerCase()
-    .includes('compliant')
+  const normalizedShariahStatus = shariahStatus
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_')
+  const isCompliant = normalizedShariahStatus === 'COMPLIANT'
+  const shariahTone =
+    isCompliant
+      ? 'compliant'
+      : normalizedShariahStatus === 'NON_COMPLIANT'
+        ? 'nonCompliant'
+        : 'warning'
 
   const confidenceLabel =
     conviction >= 80
@@ -224,17 +232,13 @@ export default function AIVerdictPanel({
 
                 <StatusBadge
                   label={shariahStatus}
-                  tone={
-                    isCompliant
-                      ? 'compliant'
-                      : 'nonCompliant'
-                  }
+                  tone={shariahTone}
                 />
               </div>
 
               <p className="mt-4 text-sm leading-6 text-slate-500">
-                Risk and Shariah screening should be reviewed alongside
-                the technical verdict before making any decision.
+                Risk and AAOIFI Shariah screening should be reviewed
+                alongside the technical verdict before making any decision.
               </p>
             </div>
           </div>
@@ -275,7 +279,7 @@ export default function AIVerdictPanel({
 
             <div>
               <p className="text-sm text-slate-500">
-                Shariah
+                AAOIFI Shariah
               </p>
               <p
                 className={[

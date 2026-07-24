@@ -529,22 +529,19 @@ function buildShariah(master) {
   const summary = shariah?.summary || {};
   const company = shariah?.company || {};
   const provider = shariah?.provider || null;
-
-  const methodologiesPassed =
-    summary?.methodologiesPassed ??
-    null;
-
-  const methodologiesFailed =
-    summary?.methodologiesFailed ??
-    null;
-
-  const methodologiesUnknown =
-    summary?.methodologiesUnknown ??
-    null;
-
-  const methodologiesTotal =
-    summary?.methodologiesTotal ??
-    null;
+  const primaryMethodology =
+    shariah?.primaryMethodology || {
+      id: summary?.methodologyId || "AAOIFI",
+      name: summary?.methodologyName || "AAOIFI",
+      status:
+        summary?.status ??
+        shariah?.status ??
+        "UNKNOWN",
+      isCompliant: null,
+      verified: null,
+      basis: null,
+      reason: null
+    };
 
   return {
     status:
@@ -588,11 +585,23 @@ function buildShariah(master) {
       assetType: company?.assetType ?? null
     },
 
-    methodologies: {
-      passed: methodologiesPassed,
-      failed: methodologiesFailed,
-      unknown: methodologiesUnknown,
-      total: methodologiesTotal
+    methodology: {
+      id: primaryMethodology.id || "AAOIFI",
+      name: primaryMethodology.name || "AAOIFI",
+      status:
+        primaryMethodology.status ||
+        summary?.status ||
+        "UNKNOWN",
+      isCompliant:
+        typeof primaryMethodology.isCompliant === "boolean"
+          ? primaryMethodology.isCompliant
+          : null,
+      verified:
+        typeof primaryMethodology.verified === "boolean"
+          ? primaryMethodology.verified
+          : null,
+      basis: primaryMethodology.basis || null,
+      reason: primaryMethodology.reason || null
     },
 
     businessActivity: shariah?.businessActivity
@@ -619,7 +628,7 @@ function buildShariah(master) {
       : null,
 
     note:
-      "Shariah status is reported from the screening provider and is not a religious ruling by AzaLens."
+      "The displayed Shariah status uses AAOIFI screening and is not a religious ruling by AzaLens."
   };
 }
 

@@ -1,3 +1,128 @@
+export type ShariahStatus =
+  | "COMPLIANT"
+  | "NON_COMPLIANT"
+  | "UNKNOWN"
+  | string
+
+export interface ShariahMethodologyResult {
+  id?: string | null
+  name?: string | null
+  status?: ShariahStatus
+  isCompliant?: boolean | null
+  verified?: boolean | null
+  disposition?: string | null
+  basis?: string | null
+  alternateBasis?: unknown
+  basesDisagree?: boolean | null
+  reason?: string | null
+}
+
+export interface ShariahComplianceData {
+  success?: boolean
+  symbol?: string | null
+  summary?: {
+    headline?: string | null
+    status?: ShariahStatus
+    confidence?: string | number
+    methodologyId?: string
+    methodologyName?: string
+    explanation?: string | null
+    purificationRatePercent?: number | null
+    purificationRateFormatted?: string | null
+  }
+  primaryMethodology?: ShariahMethodologyResult
+  methodologies?: {
+    primary?: string
+    results?: Record<string, ShariahMethodologyResult>
+  }
+  businessActivity?: {
+    status?: string
+    passed?: boolean | null
+    reason?: string | null
+    revenueRatios?: {
+      impermissibleFormatted?: string | null
+      interestIncomeFormatted?: string | null
+      combinedImpureFormatted?: string | null
+    } | null
+  }
+  financialScreen?: {
+    status?: string
+    passed?: boolean | null
+    ratios?: {
+      debtToAssetsFormatted?: string | null
+      cashToAssetsFormatted?: string | null
+      receivablesToAssetsFormatted?: string | null
+      interestIncomeToRevenueFormatted?: string | null
+      debtToMarketCapFormatted?: string | null
+    }
+  }
+  verification?: {
+    lastCheckedAt?: string | null
+    isStale?: boolean | null
+    dataQuality?: unknown
+  } | null
+  provider?: {
+    id?: string | null
+    name?: string | null
+  } | null
+}
+
+export interface PriceZone {
+  low?: number
+  high?: number
+  center?: number
+  width?: number
+  widthPercent?: number
+}
+
+export interface StructureReference {
+  zone?: PriceZone | null
+  distancePercent?: number
+  classification?: string
+  score?: number
+  strengthScore?: number
+  sourceCount?: number
+  sources?: string[]
+}
+
+export interface MarketStructureData {
+  provider?: string
+  supportResistance?: {
+    success?: boolean
+    provider?: string
+    currentPrice?: number
+    nearestSupport?: StructureReference | null
+    nearestResistance?: StructureReference | null
+    statistics?: {
+      barsAnalyzed?: number
+      rawPivotCount?: number
+      totalZones?: number
+      supportZonesBelowPrice?: number
+      resistanceZonesAbovePrice?: number
+    }
+    pricePosition?: {
+      insideZone?: boolean
+    }
+    warnings?: string[]
+    dataSource?: string
+    methodology?: {
+      pivotWindow?: number
+      mergeThresholdPercent?: number
+    }
+  }
+}
+
+export interface ConfluenceData {
+  success?: boolean
+  provider?: string
+  currentPrice?: number
+  strongestZone?: StructureReference | null
+  nearestSupport?: StructureReference | null
+  nearestResistance?: StructureReference | null
+  warnings?: string[]
+  dataSource?: string
+}
+
 export interface AnalysisResponse {
   data: {
     market: {
@@ -34,6 +159,7 @@ export interface AnalysisResponse {
     trend: {
       trend: string
       score: number
+      provider?: string
     }
 
     agreement: {
@@ -180,19 +306,9 @@ export interface AnalysisResponse {
       }
     }
 
-    confluence: {
-      strongestZone: {
-        zone: {
-          center: number
-        }
-      }
+    marketStructure?: MarketStructureData
 
-      nearestSupport: {
-        zone: {
-          center: number
-        }
-      }
-    }
+    confluence: ConfluenceData
 
     explanation: {
       overallAssessment: string
@@ -244,12 +360,7 @@ export interface AnalysisResponse {
       disclaimer?: string
     }
 
-    shariah: {
-      summary: {
-        status: string
-        confidence?: string | number
-      }
-    }
+    shariah: ShariahComplianceData
   }
 }
 
