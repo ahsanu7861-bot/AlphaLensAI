@@ -11,6 +11,7 @@ import {
   type LineData,
   type Time,
 } from 'lightweight-charts';
+import { useTheme } from '../app/providers/theme';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -104,6 +105,7 @@ export default function StockChart({
   symbol,
 }: StockChartProps) {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
+  const { resolvedTheme } = useTheme();
 
   const [bars, setBars] = useState<HistoricalBar[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,26 +204,32 @@ export default function StockChart({
       return;
     }
 
+    const isDayTheme = resolvedTheme === 'day';
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: 520,
+      height: container.clientWidth < 640 ? 390 : 520,
 
       layout: {
         background: {
           type: ColorType.Solid,
-          color: '#07111f',
+          color: isDayTheme ? '#ffffff' : '#080e18',
         },
-        textColor: '#94a3b8',
+        textColor: isDayTheme ? '#77849a' : '#7f8ca1',
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, sans-serif',
+        attributionLogo: false,
       },
 
       grid: {
         vertLines: {
-          color: 'rgba(148, 163, 184, 0.08)',
+          color: isDayTheme
+            ? 'rgba(119, 132, 154, 0.12)'
+            : 'rgba(127, 140, 161, 0.09)',
         },
         horzLines: {
-          color: 'rgba(148, 163, 184, 0.08)',
+          color: isDayTheme
+            ? 'rgba(119, 132, 154, 0.12)'
+            : 'rgba(127, 140, 161, 0.09)',
         },
       },
 
@@ -230,7 +238,7 @@ export default function StockChart({
       },
 
       rightPriceScale: {
-        borderColor: 'rgba(148, 163, 184, 0.18)',
+        borderColor: isDayTheme ? '#dce4ef' : '#1c2637',
         scaleMargins: {
           top: 0.08,
           bottom: 0.25,
@@ -238,7 +246,7 @@ export default function StockChart({
       },
 
       timeScale: {
-        borderColor: 'rgba(148, 163, 184, 0.18)',
+        borderColor: isDayTheme ? '#dce4ef' : '#1c2637',
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 4,
@@ -335,6 +343,7 @@ export default function StockChart({
 
       chart.applyOptions({
         width: entry.contentRect.width,
+        height: entry.contentRect.width < 640 ? 390 : 520,
       });
     });
 
@@ -344,33 +353,10 @@ export default function StockChart({
       resizeObserver.disconnect();
       chart.remove();
     };
-  }, [bars]);
-
-  const latestBar = bars.at(-1);
-  const previousBar = bars.at(-2);
-
-  const change =
-    latestBar && previousBar
-      ? latestBar.close - previousBar.close
-      : null;
-
-  const changePercent =
-    change !== null && previousBar
-      ? (change / previousBar.close) * 100
-      : null;
+  }, [bars, resolvedTheme]);
 
   return (
-    <section
-      style={{
-        border: '1px solid rgba(148, 163, 184, 0.14)',
-        borderRadius: '20px',
-        background:
-          'linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(7, 17, 31, 0.98))',
-        boxShadow:
-          '0 24px 70px rgba(2, 8, 23, 0.28)',
-        overflow: 'hidden',
-      }}
-    >
+    <section className="az-chart-card overflow-hidden rounded-[22px] border border-stroke bg-surface shadow-[0_16px_48px_var(--az-shadow)]">
       <div
         style={{
           display: 'flex',
@@ -392,8 +378,9 @@ export default function StockChart({
             <h2
               style={{
                 margin: 0,
-                color: '#f8fafc',
+                color: 'var(--az-text)',
                 fontSize: '22px',
+                fontFamily: 'var(--az-font-display)',
               }}
             >
               {symbol.toUpperCase()} Price Chart
@@ -403,8 +390,8 @@ export default function StockChart({
               style={{
                 padding: '5px 9px',
                 borderRadius: '999px',
-                background: 'rgba(56, 189, 248, 0.12)',
-                color: '#7dd3fc',
+                background: 'var(--az-brand-soft)',
+                color: 'var(--az-brand)',
                 fontSize: '12px',
                 fontWeight: 700,
               }}
@@ -416,43 +403,13 @@ export default function StockChart({
           <p
             style={{
               margin: '6px 0 0',
-              color: '#64748b',
+              color: 'var(--az-text-muted)',
               fontSize: '13px',
             }}
           >
             Candlesticks · Volume · EMA 20 · SMA 50
           </p>
         </div>
-
-        {latestBar && (
-          <div style={{ textAlign: 'right' }}>
-            <div
-              style={{
-                color: '#f8fafc',
-                fontSize: '24px',
-                fontWeight: 750,
-              }}
-            >
-              ${latestBar.close.toFixed(2)}
-            </div>
-
-            {change !== null && changePercent !== null && (
-              <div
-                style={{
-                  marginTop: '3px',
-                  color:
-                    change >= 0 ? '#4ade80' : '#f87171',
-                  fontWeight: 650,
-                }}
-              >
-                {change >= 0 ? '+' : ''}
-                {change.toFixed(2)} (
-                {change >= 0 ? '+' : ''}
-                {changePercent.toFixed(2)}%)
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       <div
@@ -460,8 +417,8 @@ export default function StockChart({
           display: 'flex',
           gap: '18px',
           flexWrap: 'wrap',
-          padding: '4px 22px 14px',
-          color: '#94a3b8',
+          padding: '16px 22px 14px',
+          color: 'var(--az-text-muted)',
           fontSize: '12px',
         }}
       >
@@ -492,7 +449,7 @@ export default function StockChart({
             height: '520px',
             display: 'grid',
             placeItems: 'center',
-            color: '#94a3b8',
+            color: 'var(--az-text-muted)',
           }}
         >
           Loading {symbol.toUpperCase()} chart…
@@ -506,7 +463,7 @@ export default function StockChart({
             display: 'grid',
             placeItems: 'center',
             padding: '30px',
-            color: '#fca5a5',
+            color: 'var(--az-critical)',
             textAlign: 'center',
           }}
         >
@@ -515,24 +472,34 @@ export default function StockChart({
       )}
 
       {!loading && !error && (
-        <div
-          ref={chartContainerRef}
-          style={{
-            width: '100%',
-            minHeight: '520px',
-          }}
-        />
+        <div className="az-chart-viewport">
+          <div
+            ref={chartContainerRef}
+            style={{
+              width: '100%',
+              minHeight: '520px',
+            }}
+          />
+        </div>
       )}
 
       <div
         style={{
           padding: '9px 22px 16px',
-          color: '#475569',
+          color: 'var(--az-text-muted)',
           fontSize: '11px',
           textAlign: 'right',
         }}
       >
-        Charts powered by TradingView Lightweight Charts™
+        Charts powered by{' '}
+        <a
+          href="https://www.tradingview.com/"
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-ink-soft transition-colors hover:text-brand"
+        >
+          TradingView Lightweight Charts™
+        </a>
       </div>
     </section>
   );

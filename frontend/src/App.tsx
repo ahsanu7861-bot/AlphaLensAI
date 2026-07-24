@@ -193,9 +193,12 @@ const evidenceScores = {
     />
 
     <ImportantLevels
-      support={data?.confluence?.nearestSupport?.zone?.center}
-      confluence={data?.confluence?.strongestZone?.zone?.center}
-      currentPrice={data?.market?.data?.price}
+      support={data?.confluence?.nearestSupport}
+      actionableConfluence={data?.confluence?.actionableZone}
+      strongestConfluence={data?.confluence?.strongestZone}
+      actionableDistancePercent={
+        data?.confluence?.methodology?.actionableDistancePercent ?? 5
+      }
     />
   </section>
 </main>

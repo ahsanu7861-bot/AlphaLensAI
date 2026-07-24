@@ -78,11 +78,13 @@ export interface PriceZone {
 export interface StructureReference {
   zone?: PriceZone | null
   distancePercent?: number
+  role?: string
   classification?: string
   score?: number
   strengthScore?: number
   sourceCount?: number
   sources?: string[]
+  nearCurrentPrice?: boolean
 }
 
 export interface MarketStructureData {
@@ -117,8 +119,15 @@ export interface ConfluenceData {
   provider?: string
   currentPrice?: number
   strongestZone?: StructureReference | null
+  actionableZone?: StructureReference | null
   nearestSupport?: StructureReference | null
   nearestResistance?: StructureReference | null
+  zones?: StructureReference[]
+  methodology?: {
+    actionableDistancePercent?: number
+    minimumActionableSourceCount?: number
+    minimumActionableScore?: number
+  }
   warnings?: string[]
   dataSource?: string
 }

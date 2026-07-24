@@ -170,7 +170,7 @@ export default function IslamicCompliance({
   }>;
 
   return (
-    <Card variant="brand" padding="lg">
+    <Card variant="positive" padding="lg">
       <div>
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
           <div>

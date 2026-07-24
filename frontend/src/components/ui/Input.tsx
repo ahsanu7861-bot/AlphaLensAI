@@ -34,7 +34,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-2 block text-sm font-medium text-slate-300"
+            className="mb-2 block text-sm font-medium text-ink-soft"
           >
             {label}
           </label>
@@ -42,16 +42,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
         <div
           className={[
-            "flex min-h-12 items-center rounded-2xl border bg-white/[0.04]",
+            "flex min-h-12 items-center rounded-2xl border bg-surface-soft",
             "transition duration-200",
             error
-              ? "border-rose-500/50 focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-500/10"
-              : "border-white/10 focus-within:border-emerald-500/40 focus-within:ring-2 focus-within:ring-emerald-500/10",
+              ? "border-critical/50 focus-within:border-critical focus-within:ring-2 focus-within:ring-critical/10"
+              : "border-stroke focus-within:border-brand/45 focus-within:ring-2 focus-within:ring-brand/10",
             disabled ? "cursor-not-allowed opacity-50" : "",
           ].join(" ")}
         >
           {leadingIcon && (
-            <span className="ml-4 shrink-0 text-slate-500">
+            <span className="ml-4 shrink-0 text-ink-muted">
               {leadingIcon}
             </span>
           )}
@@ -69,8 +69,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                   : undefined
             }
             className={[
-              "min-w-0 flex-1 bg-transparent px-4 py-3 text-white outline-none",
-              "placeholder:text-slate-600",
+              "min-w-0 flex-1 bg-transparent px-4 py-3 text-ink outline-none",
+              "placeholder:text-ink-muted",
               className,
             ].join(" ")}
             {...props}
@@ -84,17 +84,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p
             id={`${inputId}-error`}
-            className="mt-2 text-sm text-rose-400"
+            className="mt-2 text-sm text-critical"
           >
             {error}
           </p>
         )}
 
         {!error && helperText && (
-          <p
-            id={`${inputId}-helper`}
-            className="mt-2 text-sm text-slate-500"
-          >
+          <p id={`${inputId}-helper`} className="mt-2 text-sm text-ink-muted">
             {helperText}
           </p>
         )}

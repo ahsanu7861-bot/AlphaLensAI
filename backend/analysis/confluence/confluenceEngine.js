@@ -7,7 +7,10 @@ const DEFAULT_OPTIONS = {
   clusterThresholdPercent: 1,
   maximumZones: 10,
   minimumConfluenceScore: 15,
-  proximityThresholdPercent: 2
+  proximityThresholdPercent: 2,
+  actionableDistancePercent: 5,
+  minimumActionableSourceCount: 2,
+  minimumActionableScore: 40
 };
 
 const SOURCE_WEIGHTS = {
@@ -1363,15 +1366,35 @@ function findNearestZone(
     )[0];
 }
 
+function findActionableZone(
+  zones,
+  configuration
+) {
+  return (
+    zones.find(
+      (zone) =>
+        zone.distancePercent !== null &&
+        zone.distancePercent <=
+          configuration.actionableDistancePercent &&
+        zone.sourceCount >=
+          configuration.minimumActionableSourceCount &&
+        zone.score >=
+          configuration.minimumActionableScore
+    ) || null
+  );
+}
+
 // ==================================================
 // Interpretation
 // ==================================================
 
 function buildInterpretation(
   zones,
+  actionableZone,
   nearestSupport,
   nearestResistance,
-  volumeContext
+  volumeContext,
+  configuration
 ) {
   const strongestZone =
     zones[0] ||
@@ -1382,6 +1405,16 @@ function buildInterpretation(
   if (strongestZone) {
     observations.push(
       `The strongest confluence zone is centered near ${strongestZone.zone.center} with a ${strongestZone.classification.toLowerCase()} score of ${strongestZone.score}.`
+    );
+  }
+
+  if (actionableZone) {
+    observations.push(
+      `The current swing-actionable confluence zone is centered near ${actionableZone.zone.center}, approximately ${actionableZone.distancePercent}% from the current price.`
+    );
+  } else {
+    observations.push(
+      `No multi-source confluence zone meets the immediate ${configuration.actionableDistancePercent}% swing window.`
     );
   }
 
@@ -1577,12 +1610,20 @@ function analyzeConfluence({
       "resistance-candidate"
     );
 
+  const actionableZone =
+    findActionableZone(
+      zones,
+      configuration
+    );
+
   const interpretation =
     buildInterpretation(
       zones,
+      actionableZone,
       nearestSupport,
       nearestResistance,
-      volumeContext
+      volumeContext,
+      configuration
     );
 
   const warnings = [];
@@ -1607,6 +1648,15 @@ function analyzeConfluence({
     );
   }
 
+  if (
+    zones.length > 0 &&
+    !actionableZone
+  ) {
+    warnings.push(
+      `No multi-source confluence zone met the immediate ${configuration.actionableDistancePercent}% swing window.`
+    );
+  }
+
   return {
     success:
       true,
@@ -1626,6 +1676,8 @@ function analyzeConfluence({
     strongestZone:
       zones[0] ||
       null,
+
+    actionableZone,
 
     nearestSupport,
 
@@ -1672,6 +1724,18 @@ function analyzeConfluence({
       proximityThresholdPercent:
         configuration
           .proximityThresholdPercent,
+
+      actionableDistancePercent:
+        configuration
+          .actionableDistancePercent,
+
+      minimumActionableSourceCount:
+        configuration
+          .minimumActionableSourceCount,
+
+      minimumActionableScore:
+        configuration
+          .minimumActionableScore,
 
       minimumConfluenceScore:
         configuration

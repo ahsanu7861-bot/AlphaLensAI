@@ -69,6 +69,35 @@ function toNullableBoolean(value) {
   return typeof value === "boolean" ? value : null;
 }
 
+function toNullableCompliance(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (["COMPLIANT", "PASS", "PASSED", "TRUE"].includes(normalized)) {
+    return true;
+  }
+
+  if (
+    ["NON_COMPLIANT", "NONCOMPLIANT", "FAIL", "FAILED", "FALSE"].includes(
+      normalized
+    )
+  ) {
+    return false;
+  }
+
+  return null;
+}
+
 function toNullableString(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -116,6 +145,7 @@ function collectMethodologyIds(raw, methodologySource) {
   const sources = [
     methodologySource,
     raw?.methodology_summary,
+    raw?.methodologies,
   ];
 
   sources.forEach((source) => {
@@ -136,18 +166,36 @@ function collectMethodologyIds(raw, methodologySource) {
 }
 
 function getMethodologyFallback(raw, methodologyId) {
-  const summary =
-    raw?.methodology_summary &&
-    typeof raw.methodology_summary === "object"
-      ? raw.methodology_summary
-      : {};
+  const sources = [raw?.methodology_summary, raw?.methodologies];
 
-  const summaryKey = Object.keys(summary).find(
-    (key) => normalizeMethodologyId(key) === methodologyId
-  );
+  for (const source of sources) {
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+      continue;
+    }
 
-  if (summaryKey) {
-    return toNullableBoolean(summary[summaryKey]);
+    const sourceKey = Object.keys(source).find(
+      (key) => normalizeMethodologyId(key) === methodologyId
+    );
+
+    if (!sourceKey) {
+      continue;
+    }
+
+    const value = source[sourceKey];
+    const compliance =
+      value && typeof value === "object"
+        ? toNullableCompliance(
+            value.is_compliant ??
+              value.isCompliant ??
+              value.compliant ??
+              value.status ??
+              value.disposition
+          )
+        : toNullableCompliance(value);
+
+    if (compliance !== null) {
+      return compliance;
+    }
   }
 
   const legacyFields = {
@@ -158,7 +206,7 @@ function getMethodologyFallback(raw, methodologyId) {
     SP: "sp_compliant",
   };
 
-  return toNullableBoolean(raw?.[legacyFields[methodologyId]]);
+  return toNullableCompliance(raw?.[legacyFields[methodologyId]]);
 }
 
 function normalizeMethodology(
@@ -188,7 +236,13 @@ function normalizeMethodology(
     id: methodologyId,
     name,
     isCompliant:
-      toNullableBoolean(methodology.is_compliant) ??
+      toNullableCompliance(
+        methodology.is_compliant ??
+          methodology.isCompliant ??
+          methodology.compliant ??
+          methodology.status ??
+          methodology.disposition
+      ) ??
       fallbackCompliance,
     disposition: toNullableString(methodology.disposition),
     verified: toNullableBoolean(methodology.verified),
@@ -269,8 +323,22 @@ function determineOverallStatus(raw) {
     return "NON_COMPLIANT";
   }
 
-  const explicitStatus = toNullableString(raw?.shariah_compliance_status);
-  return explicitStatus ? explicitStatus.toUpperCase() : "UNKNOWN";
+  const explicitStatus = toNullableString(
+    raw?.overall_status ??
+      raw?.shariah_compliance_status ??
+      raw?.status
+  );
+  const isCompliant = toNullableCompliance(explicitStatus);
+
+  if (isCompliant === true) {
+    return "COMPLIANT";
+  }
+
+  if (isCompliant === false) {
+    return "NON_COMPLIANT";
+  }
+
+  return "UNKNOWN";
 }
 
 function normalizeHalalTerminalResponse(raw, metadata = {}) {
@@ -281,7 +349,9 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
   const methodologySource =
     raw.by_methodology && typeof raw.by_methodology === "object"
       ? raw.by_methodology
-      : {};
+      : raw.methodologies && typeof raw.methodologies === "object"
+        ? raw.methodologies
+        : {};
 
   const methodologyIds = collectMethodologyIds(
     raw,
@@ -329,8 +399,12 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
     },
     screening: {
       overallStatus: determineOverallStatus(raw),
-      isCompliant: toNullableBoolean(raw.is_compliant),
-      providerStatus: toNullableString(raw.shariah_compliance_status),
+      isCompliant:
+        toNullableCompliance(raw.is_compliant) ??
+        toNullableCompliance(raw.overall_status),
+      providerStatus: toNullableString(
+        raw.overall_status ?? raw.shariah_compliance_status
+      ),
       disposition: toNullableString(raw.disposition),
       businessScreen: {
         passed: toNullableBoolean(raw.business_screen_pass),

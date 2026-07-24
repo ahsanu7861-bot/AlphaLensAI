@@ -16,7 +16,7 @@ export default function ProgressBar({
       {(label || showValue) && (
         <div className="mb-2 flex items-center justify-between">
           {label ? (
-            <span className="text-sm font-medium text-slate-400">
+            <span className="text-sm font-medium text-ink-soft">
               {label}
             </span>
           ) : (
@@ -24,16 +24,16 @@ export default function ProgressBar({
           )}
 
           {showValue && (
-            <span className="text-sm font-semibold text-white">
+            <span className="text-sm font-semibold text-ink">
               {safeValue}%
             </span>
           )}
         </div>
       )}
 
-      <div className="h-2 overflow-hidden rounded-full bg-white/5">
+      <div className="h-2 overflow-hidden rounded-full bg-stroke">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-700"
+          className="h-full rounded-full bg-gradient-to-r from-brand to-intelligence transition-all duration-700"
           style={{ width: `${safeValue}%` }}
         />
       </div>

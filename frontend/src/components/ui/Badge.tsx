@@ -15,22 +15,22 @@ type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
 };
 
 const variantClasses: Record<BadgeVariant, string> = {
-  neutral: "border-white/10 bg-white/5 text-slate-300",
+  neutral: "border-stroke bg-surface-soft text-ink-soft",
   success:
-    "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
-  warning: "border-amber-500/20 bg-amber-500/10 text-amber-400",
-  danger: "border-rose-500/20 bg-rose-500/10 text-rose-400",
-  info: "border-sky-500/20 bg-sky-500/10 text-sky-400",
-  brand: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+    "border-positive/20 bg-positive/10 text-positive",
+  warning: "border-caution/20 bg-caution/10 text-caution",
+  danger: "border-critical/20 bg-critical/10 text-critical",
+  info: "border-brand/20 bg-brand/10 text-brand",
+  brand: "border-intelligence/20 bg-intelligence/10 text-intelligence",
 };
 
 const dotClasses: Record<BadgeVariant, string> = {
-  neutral: "bg-slate-400",
-  success: "bg-emerald-400",
-  warning: "bg-amber-400",
-  danger: "bg-rose-400",
-  info: "bg-sky-400",
-  brand: "bg-emerald-400",
+  neutral: "bg-ink-muted",
+  success: "bg-positive",
+  warning: "bg-caution",
+  danger: "bg-critical",
+  info: "bg-brand",
+  brand: "bg-intelligence",
 };
 
 export default function Badge({

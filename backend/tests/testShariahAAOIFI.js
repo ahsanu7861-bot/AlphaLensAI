@@ -92,6 +92,36 @@ function run() {
     "UNKNOWN"
   );
 
+  const currentDocumentedShape = transformProviderResult(
+    normalizeHalalTerminalResponse({
+      symbol: "AAPL",
+      name: "Apple Inc.",
+      overall_status: "COMPLIANT",
+      methodologies: {
+        AAOIFI: "COMPLIANT",
+        DJIM: "COMPLIANT",
+        FTSE: "COMPLIANT",
+        MSCI: "COMPLIANT",
+        "S&P": "COMPLIANT",
+      },
+      purification_rate: 0.42,
+    })
+  );
+
+  assert.equal(currentDocumentedShape.summary.status, "COMPLIANT");
+  assert.equal(
+    currentDocumentedShape.primaryMethodology.status,
+    "COMPLIANT"
+  );
+  assert.equal(
+    currentDocumentedShape.methodologies.results.AAOIFI.isCompliant,
+    true
+  );
+  assert.equal(
+    currentDocumentedShape.summary.purificationRateFormatted,
+    "0.42%"
+  );
+
   const unavailable = transformProviderResult({
     success: false,
     symbol: "MISS",

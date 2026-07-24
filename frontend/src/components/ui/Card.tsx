@@ -1,6 +1,11 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
-type CardVariant = "default" | "glass" | "outline" | "brand";
+type CardVariant =
+  | "default"
+  | "glass"
+  | "outline"
+  | "brand"
+  | "positive";
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
@@ -10,10 +15,11 @@ type CardProps = HTMLAttributes<HTMLDivElement> & {
 };
 
 const variantClasses: Record<CardVariant, string> = {
-  default: "border-white/10 bg-slate-900/80",
-  glass: "border-white/10 bg-white/[0.04] backdrop-blur-xl",
-  outline: "border-white/10 bg-transparent",
-  brand: "border-emerald-500/20 bg-emerald-500/[0.05]",
+  default: "border-stroke bg-surface",
+  glass: "border-stroke bg-surface/92 backdrop-blur-xl",
+  outline: "border-stroke bg-transparent",
+  brand: "border-intelligence/20 bg-intelligence/[0.055]",
+  positive: "border-positive/20 bg-positive/[0.05]",
 };
 
 const paddingClasses = {
@@ -34,11 +40,11 @@ export default function Card({
   return (
     <div
       className={[
-        "rounded-3xl border",
+        "rounded-[22px] border shadow-[0_16px_48px_var(--az-shadow)]",
         variantClasses[variant],
         paddingClasses[padding],
         interactive
-          ? "transition duration-200 hover:-translate-y-0.5 hover:border-emerald-500/25 hover:shadow-2xl hover:shadow-emerald-950/20"
+          ? "transition duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-[0_20px_60px_var(--az-shadow)]"
           : "",
         className,
       ].join(" ")}

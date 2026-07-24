@@ -14,12 +14,12 @@ export default function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-4">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight text-white">
+        <h2 className="font-display text-xl font-semibold tracking-tight text-ink">
           {title}
         </h2>
 
         {description && (
-          <p className="mt-1 text-sm leading-6 text-slate-500">
+          <p className="mt-1 text-sm leading-6 text-ink-muted">
             {description}
           </p>
         )}

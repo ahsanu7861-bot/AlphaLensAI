@@ -13,17 +13,17 @@ type StatusBadgeProps = {
 
 const toneClasses: Record<StatusTone, string> = {
   bullish:
-    'border-emerald-400/20 bg-emerald-500/10 text-emerald-400',
+    'border-positive/20 bg-positive/10 text-positive',
   bearish:
-    'border-red-400/20 bg-red-500/10 text-red-400',
+    'border-critical/20 bg-critical/10 text-critical',
   neutral:
-    'border-sky-400/20 bg-sky-500/10 text-sky-400',
+    'border-brand/20 bg-brand/10 text-brand',
   warning:
-    'border-amber-400/20 bg-amber-500/10 text-amber-400',
+    'border-caution/20 bg-caution/10 text-caution',
   compliant:
-    'border-emerald-400/20 bg-emerald-500/10 text-emerald-400',
+    'border-positive/20 bg-positive/10 text-positive',
   nonCompliant:
-    'border-red-400/20 bg-red-500/10 text-red-400',
+    'border-critical/20 bg-critical/10 text-critical',
 }
 
 export default function StatusBadge({
