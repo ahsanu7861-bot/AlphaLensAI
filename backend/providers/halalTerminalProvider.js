@@ -1,5 +1,14 @@
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 const { getCache, setCache } = require("../utils/cache");
+const {
+  DATA_MODES,
+  getShariahRuntimeConfig,
+} = require("../config/shariahRuntime");
+const {
+  reserveEstimatedTokens,
+} = require("../utils/halalTerminalBudget");
 
 // ============================================================
 // AzaLens - Halal Terminal Provider
@@ -11,6 +20,20 @@ const PROVIDER_ID = "halal_terminal";
 const DEFAULT_BASE_URL = "https://api.halalterminal.com";
 const DEFAULT_TIMEOUT_MS = 5000;
 const DEFAULT_CACHE_MINUTES = 1440;
+const DEFAULT_METHODOLOGY_IDS = Object.freeze([
+  "AAOIFI",
+  "DJIM",
+  "FTSE",
+  "MSCI",
+  "SP",
+]);
+const METHODOLOGY_LABELS = Object.freeze({
+  AAOIFI: "AAOIFI",
+  DJIM: "DJIM",
+  FTSE: "FTSE",
+  MSCI: "MSCI",
+  SP: "S&P",
+});
 
 const inFlightRequests = new Map();
 
@@ -46,6 +69,35 @@ function toNullableBoolean(value) {
   return typeof value === "boolean" ? value : null;
 }
 
+function toNullableCompliance(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (["COMPLIANT", "PASS", "PASSED", "TRUE"].includes(normalized)) {
+    return true;
+  }
+
+  if (
+    ["NON_COMPLIANT", "NONCOMPLIANT", "FAIL", "FAILED", "FALSE"].includes(
+      normalized
+    )
+  ) {
+    return false;
+  }
+
+  return null;
+}
+
 function toNullableString(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -65,11 +117,110 @@ function normalizeDisclaimer(disclaimer) {
   };
 }
 
-function normalizeMethodology(name, methodology) {
+function normalizeMethodologyId(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/&/g, "")
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (["S_P", "SANDP", "S_AND_P", "SNP"].includes(normalized)) {
+    return "SP";
+  }
+
+  return normalized;
+}
+
+function collectMethodologyIds(raw, methodologySource) {
+  const discovered = new Set(DEFAULT_METHODOLOGY_IDS);
+  const sources = [
+    methodologySource,
+    raw?.methodology_summary,
+    raw?.methodologies,
+  ];
+
+  sources.forEach((source) => {
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+      return;
+    }
+
+    Object.keys(source).forEach((key) => {
+      const id = normalizeMethodologyId(key);
+
+      if (id) {
+        discovered.add(id);
+      }
+    });
+  });
+
+  return [...discovered];
+}
+
+function getMethodologyFallback(raw, methodologyId) {
+  const sources = [raw?.methodology_summary, raw?.methodologies];
+
+  for (const source of sources) {
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+      continue;
+    }
+
+    const sourceKey = Object.keys(source).find(
+      (key) => normalizeMethodologyId(key) === methodologyId
+    );
+
+    if (!sourceKey) {
+      continue;
+    }
+
+    const value = source[sourceKey];
+    const compliance =
+      value && typeof value === "object"
+        ? toNullableCompliance(
+            value.is_compliant ??
+              value.isCompliant ??
+              value.compliant ??
+              value.status ??
+              value.disposition
+          )
+        : toNullableCompliance(value);
+
+    if (compliance !== null) {
+      return compliance;
+    }
+  }
+
+  const legacyFields = {
+    AAOIFI: "aaoifi_compliant",
+    DJIM: "djim_compliant",
+    FTSE: "ftse_compliant",
+    MSCI: "msci_compliant",
+    SP: "sp_compliant",
+  };
+
+  return toNullableCompliance(raw?.[legacyFields[methodologyId]]);
+}
+
+function normalizeMethodology(
+  methodologyId,
+  methodology,
+  fallbackCompliance
+) {
+  const name = METHODOLOGY_LABELS[methodologyId] || methodologyId;
+
   if (!methodology || typeof methodology !== "object") {
     return {
+      id: methodologyId,
       name,
-      isCompliant: null,
+      isCompliant: fallbackCompliance,
       disposition: null,
       verified: null,
       reason: null,
@@ -82,8 +233,17 @@ function normalizeMethodology(name, methodology) {
   const alternate = methodology.alternate_basis;
 
   return {
+    id: methodologyId,
     name,
-    isCompliant: toNullableBoolean(methodology.is_compliant),
+    isCompliant:
+      toNullableCompliance(
+        methodology.is_compliant ??
+          methodology.isCompliant ??
+          methodology.compliant ??
+          methodology.status ??
+          methodology.disposition
+      ) ??
+      fallbackCompliance,
     disposition: toNullableString(methodology.disposition),
     verified: toNullableBoolean(methodology.verified),
     reason: toNullableString(methodology.reason),
@@ -163,8 +323,22 @@ function determineOverallStatus(raw) {
     return "NON_COMPLIANT";
   }
 
-  const explicitStatus = toNullableString(raw?.shariah_compliance_status);
-  return explicitStatus ? explicitStatus.toUpperCase() : "UNKNOWN";
+  const explicitStatus = toNullableString(
+    raw?.overall_status ??
+      raw?.shariah_compliance_status ??
+      raw?.status
+  );
+  const isCompliant = toNullableCompliance(explicitStatus);
+
+  if (isCompliant === true) {
+    return "COMPLIANT";
+  }
+
+  if (isCompliant === false) {
+    return "NON_COMPLIANT";
+  }
+
+  return "UNKNOWN";
 }
 
 function normalizeHalalTerminalResponse(raw, metadata = {}) {
@@ -175,11 +349,30 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
   const methodologySource =
     raw.by_methodology && typeof raw.by_methodology === "object"
       ? raw.by_methodology
-      : {};
+      : raw.methodologies && typeof raw.methodologies === "object"
+        ? raw.methodologies
+        : {};
 
-  const methodologyNames = ["AAOIFI", "DJIM", "FTSE", "MSCI", "SP"];
-  const methodologies = methodologyNames.map((name) =>
-    normalizeMethodology(name, methodologySource[name])
+  const methodologyIds = collectMethodologyIds(
+    raw,
+    methodologySource
+  );
+  const methodologies = methodologyIds.map((methodologyId) => {
+    const sourceKey = Object.keys(methodologySource).find(
+      (key) => normalizeMethodologyId(key) === methodologyId
+    );
+
+    return normalizeMethodology(
+      methodologyId,
+      sourceKey ? methodologySource[sourceKey] : null,
+      getMethodologyFallback(raw, methodologyId)
+    );
+  });
+  const methodologySummary = Object.fromEntries(
+    methodologies.map((methodology) => [
+      methodology.id,
+      methodology.isCompliant,
+    ])
   );
 
   const disclaimers = Array.isArray(raw.disclaimers)
@@ -206,8 +399,12 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
     },
     screening: {
       overallStatus: determineOverallStatus(raw),
-      isCompliant: toNullableBoolean(raw.is_compliant),
-      providerStatus: toNullableString(raw.shariah_compliance_status),
+      isCompliant:
+        toNullableCompliance(raw.is_compliant) ??
+        toNullableCompliance(raw.overall_status),
+      providerStatus: toNullableString(
+        raw.overall_status ?? raw.shariah_compliance_status
+      ),
       disposition: toNullableString(raw.disposition),
       businessScreen: {
         passed: toNullableBoolean(raw.business_screen_pass),
@@ -222,23 +419,7 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
       purificationRatePercent: toNullableNumber(raw.purification_rate),
     },
     methodologies: {
-      summary:
-        raw.methodology_summary &&
-        typeof raw.methodology_summary === "object"
-          ? {
-              AAOIFI: toNullableBoolean(raw.methodology_summary.AAOIFI),
-              DJIM: toNullableBoolean(raw.methodology_summary.DJIM),
-              FTSE: toNullableBoolean(raw.methodology_summary.FTSE),
-              MSCI: toNullableBoolean(raw.methodology_summary.MSCI),
-              SP: toNullableBoolean(raw.methodology_summary.SP),
-            }
-          : {
-              AAOIFI: toNullableBoolean(raw.aaoifi_compliant),
-              DJIM: toNullableBoolean(raw.djim_compliant),
-              FTSE: toNullableBoolean(raw.ftse_compliant),
-              MSCI: toNullableBoolean(raw.msci_compliant),
-              SP: toNullableBoolean(raw.sp_compliant),
-            },
+      summary: methodologySummary,
       details: methodologies,
     },
     financials: {
@@ -309,6 +490,9 @@ function normalizeHalalTerminalResponse(raw, metadata = {}) {
       cacheKey: metadata.cacheKey || null,
       fetchedAt: metadata.fetchedAt || new Date().toISOString(),
       responseTimeMs: toNullableNumber(metadata.responseTimeMs),
+      dataMode: metadata.dataMode || null,
+      fixture: metadata.fixture === true,
+      costProtection: metadata.costProtection || null,
     },
     raw,
   };
@@ -341,13 +525,9 @@ function buildFailureResult(symbol, error, metadata = {}) {
       purificationRatePercent: null,
     },
     methodologies: {
-      summary: {
-        AAOIFI: null,
-        DJIM: null,
-        FTSE: null,
-        MSCI: null,
-        SP: null,
-      },
+      summary: Object.fromEntries(
+        DEFAULT_METHODOLOGY_IDS.map((id) => [id, null])
+      ),
       details: [],
     },
     disclaimers: [],
@@ -362,6 +542,9 @@ function buildFailureResult(symbol, error, metadata = {}) {
       cacheKey: metadata.cacheKey || null,
       fetchedAt: new Date().toISOString(),
       responseTimeMs: toNullableNumber(metadata.responseTimeMs),
+      dataMode: metadata.dataMode || null,
+      fixture: metadata.fixture === true,
+      costProtection: metadata.costProtection || null,
     },
   };
 }
@@ -431,6 +614,59 @@ function classifyAxiosError(error) {
   };
 }
 
+function getFixturePath(fixtureDirectory, symbol) {
+  const safeFileName = symbol.replace(/[^A-Z0-9-]/g, "_");
+  return path.join(fixtureDirectory, `${safeFileName}.json`);
+}
+
+function loadFixture(symbol, runtimeConfig, cacheKey) {
+  const fixturePath = getFixturePath(
+    runtimeConfig.fixtureDirectory,
+    symbol
+  );
+
+  try {
+    const raw = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
+    const normalized = normalizeHalalTerminalResponse(raw, {
+      fromCache: false,
+      cacheKey,
+      fetchedAt: new Date().toISOString(),
+      responseTimeMs: 0,
+      dataMode: DATA_MODES.FIXTURE,
+      fixture: true,
+    });
+
+    return {
+      ...normalized,
+      provider: {
+        ...normalized.provider,
+        id: "halal_terminal_fixture",
+        name: "Halal Terminal Development Fixture",
+      },
+    };
+  } catch (error) {
+    const fixtureMissing = error.code === "ENOENT";
+
+    return buildFailureResult(
+      symbol,
+      {
+        code: fixtureMissing
+          ? "SHARIAH_FIXTURE_NOT_FOUND"
+          : "SHARIAH_FIXTURE_INVALID",
+        message: fixtureMissing
+          ? `No approved Shariah fixture is available for ${symbol}.`
+          : `The Shariah fixture for ${symbol} is invalid.`,
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.FIXTURE,
+        fixture: true,
+      }
+    );
+  }
+}
+
 async function fetchScreening(symbol) {
   const normalizedSymbol = normalizeTicker(symbol);
 
@@ -440,6 +676,91 @@ async function fetchScreening(symbol) {
       message: "A valid stock symbol is required.",
       retryable: false,
     });
+  }
+
+  const runtimeConfig = getShariahRuntimeConfig();
+  const cacheKey =
+    runtimeConfig.dataMode === DATA_MODES.FIXTURE
+      ? `shariah:fixture:${normalizedSymbol}`
+      : `shariah:provider:${normalizedSymbol}`;
+
+  if (runtimeConfig.dataMode === DATA_MODES.OFFLINE) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: runtimeConfig.invalidMode
+          ? "SHARIAH_DATA_MODE_INVALID"
+          : "SHARIAH_LIVE_API_DISABLED",
+        message: runtimeConfig.invalidMode
+          ? "SHARIAH_DATA_MODE is invalid, so screening was blocked."
+          : "Live Shariah screening is disabled to protect API quota.",
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.OFFLINE,
+      }
+    );
+  }
+
+  const cached = getCache(cacheKey);
+
+  if (cached) {
+    return {
+      ...cached,
+      metadata: {
+        ...(cached.metadata || {}),
+        fromCache: true,
+        cacheKey,
+        dataMode: runtimeConfig.dataMode,
+      },
+    };
+  }
+
+  if (runtimeConfig.dataMode === DATA_MODES.FIXTURE) {
+    const fixtureResult = loadFixture(
+      normalizedSymbol,
+      runtimeConfig,
+      cacheKey
+    );
+
+    if (fixtureResult.success) {
+      setCache(cacheKey, fixtureResult, DEFAULT_CACHE_MINUTES);
+    }
+
+    return fixtureResult;
+  }
+
+  if (runtimeConfig.dataMode === DATA_MODES.CACHE_ONLY) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: "SHARIAH_CACHE_MISS",
+        message:
+          "No cached Shariah result is available, and live access is disabled.",
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.CACHE_ONLY,
+      }
+    );
+  }
+
+  if (!runtimeConfig.liveApiEnabled) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: "HALAL_TERMINAL_LIVE_OPT_IN_REQUIRED",
+        message:
+          "Live Halal Terminal access requires explicit cost-safety opt-in.",
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.LIVE,
+      }
+    );
   }
 
   const apiKey = process.env.HALAL_TERMINAL_API_KEY;
@@ -454,20 +775,6 @@ async function fetchScreening(symbol) {
     DEFAULT_CACHE_MINUTES
   );
 
-  const cacheKey = `shariah:${normalizedSymbol}`;
-  const cached = getCache(cacheKey);
-
-  if (cached) {
-    return {
-      ...cached,
-      metadata: {
-        ...(cached.metadata || {}),
-        fromCache: true,
-        cacheKey,
-      },
-    };
-  }
-
   if (!apiKey) {
     return buildFailureResult(
       normalizedSymbol,
@@ -477,12 +784,36 @@ async function fetchScreening(symbol) {
           "HALAL_TERMINAL_API_KEY is not configured in the environment.",
         retryable: false,
       },
-      { cacheKey }
+      {
+        cacheKey,
+        dataMode: DATA_MODES.LIVE,
+      }
     );
   }
 
   if (inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey);
+  }
+
+  const costProtection = reserveEstimatedTokens(
+    runtimeConfig,
+    normalizedSymbol
+  );
+
+  if (!costProtection.allowed) {
+    return buildFailureResult(
+      normalizedSymbol,
+      {
+        code: costProtection.code,
+        message: costProtection.message,
+        retryable: false,
+      },
+      {
+        cacheKey,
+        dataMode: DATA_MODES.LIVE,
+        costProtection,
+      }
+    );
   }
 
   const requestPromise = (async () => {
@@ -509,6 +840,8 @@ async function fetchScreening(symbol) {
         cacheKey,
         fetchedAt: new Date().toISOString(),
         responseTimeMs: Date.now() - startedAt,
+        dataMode: DATA_MODES.LIVE,
+        costProtection,
       });
 
       setCache(cacheKey, normalized, cacheMinutes);
@@ -519,6 +852,8 @@ async function fetchScreening(symbol) {
       return buildFailureResult(normalizedSymbol, classified, {
         cacheKey,
         responseTimeMs: Date.now() - startedAt,
+        dataMode: DATA_MODES.LIVE,
+        costProtection,
       });
     } finally {
       inFlightRequests.delete(cacheKey);

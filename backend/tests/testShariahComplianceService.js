@@ -28,14 +28,16 @@ async function run() {
     explanation: result.summary?.explanation || null,
     purificationRate:
       result.summary?.purificationRateFormatted || null,
-    methodologies: Array.isArray(result.methodologies)
-      ? result.methodologies.map((item) => ({
-          name: item.name,
-          status: item.status,
-          verified: item.verified,
-          basis: item.basis,
-        }))
-      : [],
+    methodology: {
+      id: result.primaryMethodology?.id || "AAOIFI",
+      name: result.primaryMethodology?.name || "AAOIFI",
+      status:
+        result.primaryMethodology?.status || "UNKNOWN",
+      verified:
+        result.primaryMethodology?.verified ?? null,
+      basis:
+        result.primaryMethodology?.basis || null,
+    },
     businessScreen: {
       status: result.businessActivity?.status || "UNKNOWN",
       reason: result.businessActivity?.reason || null,

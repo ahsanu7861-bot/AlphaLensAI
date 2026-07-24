@@ -922,22 +922,85 @@ async function runShariahCompliance({
           purificationRateFormatted:
             null,
 
-          methodologiesPassed:
-            0,
+          methodologyId:
+            "AAOIFI",
 
-          methodologiesFailed:
-            0,
-
-          methodologiesUnknown:
-            0,
-
-          methodologiesTotal:
-            0
+          methodologyName:
+            "AAOIFI"
         },
 
         company: null,
 
-        methodologies: [],
+        primaryMethodology: {
+          id:
+            "AAOIFI",
+
+          name:
+            "AAOIFI",
+
+          status:
+            "UNKNOWN",
+
+          isCompliant:
+            null,
+
+          verified:
+            null,
+
+          disposition:
+            null,
+
+          basis:
+            null,
+
+          alternateBasis:
+            null,
+
+          basesDisagree:
+            null,
+
+          reason:
+            null
+        },
+
+        methodologies: {
+          primary:
+            "AAOIFI",
+
+          results: {
+            AAOIFI: {
+              id:
+                "AAOIFI",
+
+              name:
+                "AAOIFI",
+
+              status:
+                "UNKNOWN",
+
+              isCompliant:
+                null,
+
+              verified:
+                null,
+
+              disposition:
+                null,
+
+              basis:
+                null,
+
+              alternateBasis:
+                null,
+
+              basesDisagree:
+                null,
+
+              reason:
+                null
+            }
+          }
+        },
 
         businessActivity: {
           status: "UNKNOWN",

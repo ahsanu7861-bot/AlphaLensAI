@@ -21,3 +21,12 @@ coverage/
 **/.env
 **/.env.*
 *.zip
+
+# Local backup archives
+*.tar.gz
+
+# Local backup directories
+frontend-backup/
+
+# Accidental root lockfile
+/package-lock.json

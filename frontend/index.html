@@ -2,9 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta
+      name="description"
+      content="Explainable stock intelligence with AAOIFI Shariah screening."
+    />
+    <meta name="theme-color" content="#070a11" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>AzaLens AI — Explainable Stock Intelligence</title>
+    <script>
+      (() => {
+        try {
+          const savedTheme = window.localStorage.getItem("azalens-theme");
+          const theme =
+            savedTheme === "day" || savedTheme === "night"
+              ? savedTheme
+              : window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "day"
+                : "night";
+
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme =
+            theme === "day" ? "light" : "dark";
+        } catch {
+          document.documentElement.dataset.theme = "night";
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

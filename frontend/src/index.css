@@ -1,11 +1,90 @@
 @import "tailwindcss";
 
+@theme inline {
+  --color-canvas: var(--az-canvas);
+  --color-surface: var(--az-surface);
+  --color-surface-raised: var(--az-surface-raised);
+  --color-surface-soft: var(--az-surface-soft);
+  --color-ink: var(--az-text);
+  --color-ink-soft: var(--az-text-soft);
+  --color-ink-muted: var(--az-text-muted);
+  --color-stroke: var(--az-stroke);
+  --color-stroke-strong: var(--az-stroke-strong);
+  --color-brand: var(--az-brand);
+  --color-brand-strong: var(--az-brand-strong);
+  --color-positive: var(--az-positive);
+  --color-caution: var(--az-caution);
+  --color-critical: var(--az-critical);
+  --color-intelligence: var(--az-intelligence);
+  --font-sans: var(--az-font-body);
+  --font-display: var(--az-font-display);
+}
+
+:root,
+[data-theme="night"] {
+  color-scheme: dark;
+  --az-canvas: #070a11;
+  --az-surface: #0d121d;
+  --az-surface-raised: #121927;
+  --az-surface-soft: #111a2a;
+  --az-surface-inset: #080e18;
+  --az-text: #f5f7fa;
+  --az-text-soft: #b6c0d0;
+  --az-text-muted: #7f8ca1;
+  --az-stroke: #1c2637;
+  --az-stroke-strong: #2a3850;
+  --az-brand: #4c8dff;
+  --az-brand-strong: #72a7ff;
+  --az-brand-soft: rgba(76, 141, 255, 0.18);
+  --az-positive: #31ca77;
+  --az-positive-soft: rgba(49, 202, 119, 0.14);
+  --az-caution: #f2ad4a;
+  --az-critical: #f25b70;
+  --az-intelligence: #9b7cff;
+  --az-shadow: rgba(0, 0, 0, 0.34);
+  --az-shadow-strong: rgba(0, 0, 0, 0.56);
+  --az-atmosphere:
+    radial-gradient(circle at 14% -12%, rgba(76, 141, 255, 0.1), transparent 32%),
+    radial-gradient(circle at 92% 8%, rgba(155, 124, 255, 0.06), transparent 25%);
+}
+
+[data-theme="day"] {
+  color-scheme: light;
+  --az-canvas: #f3f6fb;
+  --az-surface: #ffffff;
+  --az-surface-raised: #ffffff;
+  --az-surface-soft: #f6f8fc;
+  --az-surface-inset: #eef3f9;
+  --az-text: #102039;
+  --az-text-soft: #47566d;
+  --az-text-muted: #77849a;
+  --az-stroke: #dce4ef;
+  --az-stroke-strong: #c5d1e0;
+  --az-brand: #286eea;
+  --az-brand-strong: #155bdb;
+  --az-brand-soft: rgba(40, 110, 234, 0.15);
+  --az-positive: #168a52;
+  --az-positive-soft: rgba(22, 138, 82, 0.12);
+  --az-caution: #b86b08;
+  --az-critical: #d43c55;
+  --az-intelligence: #7255d9;
+  --az-shadow: rgba(23, 42, 72, 0.12);
+  --az-shadow-strong: rgba(23, 42, 72, 0.22);
+  --az-atmosphere:
+    radial-gradient(circle at 12% -10%, rgba(40, 110, 234, 0.08), transparent 31%),
+    radial-gradient(circle at 94% 5%, rgba(114, 85, 217, 0.055), transparent 24%);
+}
+
 :root {
-  font-family:
+  --az-font-body:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  color: #e5e7eb;
-  background: #080b12;
+  --az-font-display:
+    Sora, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-family: var(--az-font-body);
+  color: var(--az-text);
+  background: var(--az-canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -15,16 +94,18 @@
 }
 
 html {
-  background: #080b12;
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--az-canvas);
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 28%),
-    #080b12;
+  background: var(--az-canvas);
+  color: var(--az-text);
 }
 
 button,
@@ -38,7 +119,391 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
 a {
   color: inherit;
   text-decoration: none;
+}
+
+::selection {
+  background: var(--az-brand-soft);
+  color: var(--az-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--az-brand);
+  outline-offset: 3px;
+}
+
+* {
+  scrollbar-color: var(--az-stroke-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.app-shell {
+  isolation: isolate;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+.app-atmosphere {
+  position: relative;
+  background-color: var(--az-canvas);
+}
+
+.app-atmosphere::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: var(--az-atmosphere);
+}
+
+.az-brand-mark {
+  position: relative;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--az-brand) 34%, transparent);
+  border-radius: 13px;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--az-brand) 22%, var(--az-surface)),
+      color-mix(in srgb, var(--az-intelligence) 12%, var(--az-surface))
+    );
+  box-shadow: 0 10px 25px var(--az-brand-soft);
+  color: var(--az-text);
+  font-family: var(--az-font-display);
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.az-brand-mark i {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--az-positive);
+  box-shadow: 0 0 0 3px var(--az-positive-soft);
+}
+
+.az-rail-link {
+  position: relative;
+  display: grid;
+  width: 48px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  color: var(--az-text-muted);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.az-rail-link:hover {
+  border-color: var(--az-stroke);
+  background: var(--az-surface-soft);
+  color: var(--az-text);
+  transform: translateY(-1px);
+}
+
+.az-rail-link-active {
+  border-color: color-mix(in srgb, var(--az-brand) 22%, transparent);
+  background: var(--az-brand-soft);
+  color: var(--az-brand);
+}
+
+.az-rail-link-active::before {
+  position: absolute;
+  left: -13px;
+  width: 3px;
+  height: 20px;
+  border-radius: 0 999px 999px 0;
+  background: var(--az-brand);
+  content: "";
+}
+
+.az-rail-tooltip {
+  position: absolute;
+  left: calc(100% + 13px);
+  z-index: 80;
+  width: max-content;
+  pointer-events: none;
+  border: 1px solid var(--az-stroke);
+  border-radius: 9px;
+  background: var(--az-surface-raised);
+  padding: 6px 9px;
+  box-shadow: 0 12px 30px var(--az-shadow);
+  color: var(--az-text);
+  font-size: 11px;
+  font-weight: 650;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.az-rail-link:hover .az-rail-tooltip,
+.az-rail-link:focus-visible .az-rail-tooltip {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.az-icon-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid var(--az-stroke);
+  border-radius: 12px;
+  background: var(--az-surface-soft);
+  color: var(--az-text-soft);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.az-icon-button:hover {
+  border-color: var(--az-stroke-strong);
+  background: var(--az-surface-raised);
+  color: var(--az-text);
+  transform: translateY(-1px);
+}
+
+.az-command-trigger {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--az-stroke);
+  border-radius: 13px;
+  background: var(--az-surface-soft);
+  padding: 0 12px;
+  color: var(--az-text-muted);
+  font-size: 12px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.az-command-trigger:hover {
+  border-color: var(--az-stroke-strong);
+  background: var(--az-surface-raised);
+  color: var(--az-text-soft);
+}
+
+.az-popover,
+.az-card {
+  border: 1px solid var(--az-stroke);
+  background: var(--az-surface);
+  box-shadow: 0 18px 55px var(--az-shadow);
+}
+
+.az-popover {
+  z-index: 90;
+  border-radius: 18px;
+  animation: az-popover-in 150ms ease-out both;
+}
+
+.az-card {
+  border-radius: 22px;
+}
+
+[data-theme="night"] .az-secondary-card {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.az-chart-card {
+  isolation: isolate;
+}
+
+.az-chart-viewport {
+  overflow: hidden;
+  padding-top: 12px;
+}
+
+.az-command-backdrop {
+  background: color-mix(in srgb, #02060d 67%, transparent);
+  animation: az-fade-in 150ms ease-out both;
+}
+
+.az-command-dialog {
+  animation: az-dialog-in 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.az-tab-scroller {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+  scrollbar-width: none;
+}
+
+.az-tab-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.az-workspace-tab {
+  position: relative;
+  display: inline-flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 0 13px;
+  color: var(--az-text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.az-workspace-tab:hover {
+  background: var(--az-surface-soft);
+  color: var(--az-text);
+}
+
+.az-workspace-tab-active {
+  border-color: color-mix(in srgb, var(--az-brand) 20%, transparent);
+  background: var(--az-brand-soft);
+  color: var(--az-brand);
+}
+
+.az-workspace-tab-active::after {
+  position: absolute;
+  right: 13px;
+  bottom: -9px;
+  left: 13px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--az-brand);
+  content: "";
+}
+
+.az-eyebrow {
+  color: var(--az-brand);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.az-workspace-enter {
+  animation: az-workspace-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes az-workspace-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes az-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes az-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes az-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Day-theme compatibility for the existing analysis modules. New components
+ * use semantic tokens directly; these rules keep previously shipped cards
+ * readable until each module is migrated to semantic classes.
+ */
+[data-theme="day"] .app-shell .text-white,
+[data-theme="day"] .app-shell .text-slate-100,
+[data-theme="day"] .app-shell .text-slate-200 {
+  color: var(--az-text) !important;
+}
+
+[data-theme="day"] .app-shell .text-slate-300,
+[data-theme="day"] .app-shell .text-slate-400 {
+  color: var(--az-text-soft) !important;
+}
+
+[data-theme="day"] .app-shell .text-slate-500,
+[data-theme="day"] .app-shell .text-slate-600 {
+  color: var(--az-text-muted) !important;
+}
+
+[data-theme="day"] .app-shell [class*="border-white/"] {
+  border-color: var(--az-stroke) !important;
+}
+
+[data-theme="day"] .app-shell [class*="bg-white/"] {
+  background-color: var(--az-surface-soft) !important;
+}
+
+[data-theme="day"] .app-shell [class*="bg-slate-950/"] {
+  background-color: var(--az-surface-inset) !important;
+}
+
+[data-theme="day"] .app-shell .bg-slate-950,
+[data-theme="day"] .app-shell .bg-slate-900\/80 {
+  background-color: var(--az-surface) !important;
 }

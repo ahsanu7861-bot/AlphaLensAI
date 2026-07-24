@@ -69,17 +69,25 @@ function createMasterAnalysisFixture() {
 
         summary: {
           headline:
-            "Apple Inc. passes all available Shariah screening methodologies.",
+            "Apple Inc. passes the AAOIFI Shariah screening.",
           status: "COMPLIANT",
           confidence: "HIGH",
           explanation:
-            "Compliant under the available screening methodologies.",
+            "Compliant under AAOIFI screening.",
           purificationRatePercent: 3.37,
           purificationRateFormatted: "3.37%",
-          methodologiesPassed: 5,
-          methodologiesFailed: 0,
-          methodologiesUnknown: 0,
-          methodologiesTotal: 5
+          methodologyId: "AAOIFI",
+          methodologyName: "AAOIFI"
+        },
+
+        primaryMethodology: {
+          id: "AAOIFI",
+          name: "AAOIFI",
+          status: "COMPLIANT",
+          isCompliant: true,
+          verified: true,
+          basis: "assets",
+          reason: "AAOIFI screening passed."
         },
 
         company: {
@@ -164,8 +172,8 @@ function run() {
     "Apple Inc."
   );
   assert.equal(
-    decisionResult.decision.shariah.methodologies.passed,
-    5
+    decisionResult.decision.shariah.methodology.id,
+    "AAOIFI"
   );
 
   console.log("✓ Master Shariah data propagates to Decision Engine");

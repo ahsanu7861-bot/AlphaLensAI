@@ -6,3 +6,6 @@ npm-debug.log*
 phase45-backup-*/
 phase*-source.txt
 tests/inspect*.js
+storage/halal-terminal-usage.json
+storage/halal-terminal-usage.json.*.tmp
+storage/halal-terminal-usage.json.lock

@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import {
-  Activity,
   BarChart3,
   Bell,
-  BrainCircuit,
-  ChevronRight,
   Eye,
   LayoutDashboard,
   Search,
-  ShieldCheck,
-  TrendingUp,
   WalletCards,
 } from 'lucide-react'
 import { useAnalysis } from './hooks/useAnalysis'
+import StockChart from './components/StockChart'
+import ImportantLevels from './components/dashboard/ImportantLevels'
+import AIVerdictPanel from './components/dashboard/AIVerdictPanel'
+import TechnicalIndicators from './components/dashboard/TechnicalIndicators'
+import EvidenceMatrix from './components/dashboard/EvidenceMatrix'
+import TradePlan from './components/dashboard/TradePlan'
+import AIExplanation from './components/dashboard/AIExplanation'
 
 const navigation = [
   { label: 'Dashboard', icon: LayoutDashboard, active: true },
@@ -21,46 +23,12 @@ const navigation = [
   { label: 'Watchlist', icon: Eye },
 ]
 
-
-
-
 function App() {
   const [input, setInput] = useState('AAPL')
   const [symbol, setSymbol] = useState('AAPL')
 
-  const { data,isLoading, error } = useAnalysis(symbol)
-const metrics = [
-  {
-    label: 'Market Trend',
-    value: data?.trend?.trend ?? 'Loading...',
-    detail: `${data?.trend?.score ?? '--'} trend score`,
-    icon: TrendingUp,
-  },
-  {
-    label: 'Agreement',
-    value: `${data?.agreement?.confidence ?? '--'}%`,
-    detail:
-      data?.agreement?.agreementSummary ??
-      'Loading...',
-    icon: Activity,
-  },
-  {
-    label: 'Technical Risk',
-    value: data?.risk?.riskLevel ?? 'Loading...',
-    detail: `${data?.risk?.riskScore ?? '--'} risk score`,
-    icon: ShieldCheck,
-  },
-  {
-    label: 'Shariah Status',
-    value:
-      data?.shariah?.summary?.status ??
-      'Loading...',
-    detail:
-      data?.shariah?.summary?.confidence ??
-      '',
-    icon: BrainCircuit,
-  },
-]
+  const { data, isLoading, error } = useAnalysis(symbol)
+
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -74,6 +42,20 @@ const metrics = [
     setSymbol(nextSymbol)
   }
 
+  const explanation =
+    data?.agreement?.agreementSummary ?? 'Waiting for AI analysis...'
+
+  const trend = data?.trend?.trend ?? '--'
+  const confidence = data?.agreement?.confidence ?? '--'
+  const risk = data?.risk?.riskLevel ?? '--'
+  const shariah = data?.shariah?.summary?.status ?? '--'
+const evidenceScores = {
+  trendScore: data?.trend?.score ?? 95,
+  momentumScore: 82,
+  volumeScore: 71,
+  volatilityScore: 56,
+  structureScore: 88,
+}
   return (
     <div className="min-h-screen bg-[#080b12] text-slate-100">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-white/10 bg-[#0b0f18] lg:flex lg:flex-col">
@@ -160,130 +142,67 @@ const metrics = [
           </div>
         </header>
 
-        <main className="p-5 md:p-8">
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/10 via-white/[0.03] to-transparent p-6 md:p-8">
-            <div className="max-w-2xl">
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-                AI-powered market intelligence
-              </span>
-
-              <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
-                Make clearer market decisions.
-              </h2>
-
-              <p className="mt-4 max-w-xl leading-7 text-slate-400">
-                Analyze technical structure, risk, market agreement and Shariah
-                compliance through one intelligent platform.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => {
-                  document.querySelector<HTMLInputElement>(
-                    'input[aria-label="Stock ticker"]',
-                  )?.focus()
-                }}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400"
-              >
-                Analyze a stock
-                <ChevronRight size={17} />
-              </button>
-            </div>
-          </section>
-
-          {error && (
-            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-              Unable to analyze “{symbol}”. Check the ticker and try again.
-            </div>
-          )}
-
-          <section className="mt-8">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold">
-                {symbol} Intelligence Snapshot
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Latest AzaLens technical assessment
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {metrics.map(({ label, value, detail, icon: Icon }) => (
-                <article
-                  key={label}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-white/20"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-slate-500">{label}</p>
-                      <p className="mt-3 text-xl font-semibold">{value}</p>
-                    </div>
-
-                    <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400">
-                      <Icon size={20} />
-                    </div>
-                  </div>
-
-                  <p className="mt-5 text-xs text-slate-500">{detail}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-            <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">AI Market Explanation</h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Clear interpretation of the technical evidence
-                  </p>
-                </div>
-
-                <BrainCircuit className="text-emerald-400" size={22} />
-              </div>
-
-              <p className="mt-6 leading-7 text-slate-300">
-                AAPL currently shows a strong bullish structure, supported by
-                moving averages, MACD momentum and trend strength. Conviction
-                remains limited by weak relative volume and bearish
-                candlestick evidence.
-              </p>
-            </article>
-
-            <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <h3 className="font-semibold">Important Levels</h3>
-
-              <div className="mt-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">
-                    Nearest support
-                  </span>
-                  <span className="font-medium">$317.40</span>
-                </div>
-
-                <div className="h-px bg-white/10" />
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">
-                    Strongest confluence
-                  </span>
-                  <span className="font-medium">$302.75</span>
-                </div>
-
-                <div className="h-px bg-white/10" />
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Current price</span>
-                  <span className="font-medium text-emerald-400">$325.98</span>
-                </div>
-              </div>
-            </article>
-          </section>
-        </main>
-      </div>
+<main className="p-5 md:p-8">
+  {error && (
+    <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+      Unable to analyze “{symbol}”. Check the ticker and try again.
     </div>
-  )
-}
+  )}
 
-export default App
+  <AIVerdictPanel
+    symbol={symbol}
+    price={data?.market?.data?.price ?? 0}
+    changePercent={data?.market?.data?.changePercent ?? 0}
+    trend={data?.trend?.trend ?? 'Neutral'}
+    conviction={data?.agreement?.confidence ?? 0}
+    riskLevel={data?.risk?.riskLevel ?? 'Unknown'}
+    shariahStatus={data?.shariah?.summary?.status ?? 'Unknown'}
+    thesis={
+      data?.explanation?.overallAssessment ??
+      'AzaLens is generating the current market thesis...'
+    }
+    support={data?.confluence?.nearestSupport?.zone?.center}
+    resistance={data?.confluence?.strongestZone?.zone?.center}
+  />
+
+  <div className="mt-8">
+    <StockChart symbol={symbol} />
+  </div>
+
+  <div className="mt-8">
+    <TechnicalIndicators data={data} />
+  </div>
+<EvidenceMatrix {...evidenceScores} />
+  <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+    <TradePlan
+  verdict="BUY"
+  conviction={data?.agreement?.confidence ?? 0}
+  entry="$318 - $320"
+  confirmation="Break above $330"
+  stop="Below EMA20"
+  target1="$336"
+  target2="$344"
+  summary="Trend, momentum and volume remain supportive. Price is approaching resistance, so confirmation above $330 or a pullback toward support would provide a higher-quality technical setup."
+/>
+    <AIExplanation
+      trend={trend}
+      confidence={confidence}
+      risk={risk}
+      shariah={shariah}
+      explanation={explanation}
+    />
+
+    <ImportantLevels
+      support={data?.confluence?.nearestSupport}
+      actionableConfluence={data?.confluence?.actionableZone}
+      strongestConfluence={data?.confluence?.strongestZone}
+      actionableDistancePercent={
+        data?.confluence?.methodology?.actionableDistancePercent ?? 5
+      }
+    />
+  </section>
+</main>
+</div>
+</div> 
+)
+} export default App

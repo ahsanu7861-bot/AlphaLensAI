@@ -32,7 +32,7 @@ export default function LiveAnalysisTest() {
       </p>
 
       <p>
-        Shariah: <strong>{data?.shariah?.summary?.status}</strong>
+        AAOIFI Shariah: <strong>{data?.shariah?.summary?.status}</strong>
       </p>
 
       <p className="mt-4 text-sm text-slate-400">

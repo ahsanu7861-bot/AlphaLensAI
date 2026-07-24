@@ -22,7 +22,7 @@ export function Sidebar() {
 
         <div className="ml-3">
           <p className="text-lg font-semibold tracking-tight">AzaLens</p>
-          <p className="text-xs text-slate-500">AI Market Intelligence</p>
+          <p className="text-xs text-slate-500">AI Stock Intelligence</p>
         </div>
       </div>
 

@@ -69,21 +69,19 @@ async function run() {
           ?.provider?.name ||
         null,
 
-      methodologies:
-        Array.isArray(
+      methodology: {
+        id:
           result?.data?.shariah
-            ?.methodologies
-        )
-          ? result.data.shariah
-              .methodologies.map(
-                (methodology) => ({
-                  name:
-                    methodology.name,
-                  status:
-                    methodology.status
-                })
-              )
-          : []
+            ?.primaryMethodology
+            ?.id ||
+          "AAOIFI",
+
+        status:
+          result?.data?.shariah
+            ?.primaryMethodology
+            ?.status ||
+          "UNKNOWN"
+      }
     },
 
     error:
